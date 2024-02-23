@@ -6,28 +6,30 @@ Minesweeper Solver v4.1
 '''
 
 #imports
-from PIL import ImageGrab
-import pynput
-import time
-import threading
-import keyboard
-import math
-import json
+from PIL import ImageGrab #to get access to the contents of the screen. this is how it gets the board data
+import pynput #used to control the mouse
+import threading #used for the event listener.
+import keyboard #keyboard is used to set up an event listener for ESC in the event that the user wishes to stop the bot
+import math #math is used primarily for rounding values to the nearest block space
+import json #to access the settings profiles.
 
 #variables
-board=[]
-mouse = pynput.mouse.Controller()
-exitProgram=False
+board=[] #this is a list of the state of every space on the minesweeper board. it can be any number 1-8, 'b' for blank, 'g' for green, or 'f' for flag
+mouse = pynput.mouse.Controller() #setting up the mouse controller.
+exitProgram=False #the main loop has exitProgram as an escape condition. when the ESC event listener is activated, it sets this variable to True.
 
-difficulty='GoogleHard'
+#set this to the difficulty profile you want. by default their are only 3, GoogleEasy, GoogleMedium, and GoogleHard.
+#you can manually add new profiles for different difficulties or versions of the game. in theory, it should work for any version of minesweeper with very few exeptions.
+#TODO: Make a tool to help users automatically make new settings profiles.
+difficulty='GoogleHard' 
 
-with open('Settings.json', 'r') as Settings:
+with open('Settings.json', 'r') as Settings: #boilerplate to retrieve the settings profile from the json file
     try:
         properties=json.load(Settings)[difficulty]
     except KeyError:
         exit('No difficulty level matches the inputed value')
 
-clicks=[
+clicks=[ #these are the areas that the bot will click if you enable it later in the code. If you do, the bot is more likely to lose immediately, but if it doesnt than it has a headstart.
     [round(0.5*properties['boardWidth']), round(0.5*properties['boardHeight'])],
     [round(0.15*properties['boardWidth']), round(0.15*properties['boardHeight'])],
     [round(0.85*properties['boardWidth']), round(0.15*properties['boardHeight'])],
@@ -36,22 +38,32 @@ clicks=[
 ]
 
 #functions
-def accessGridSpace(cordinate, offsetX=0, offsetY=0):
+#input a board cordinate as a tuple or list, and it will return the bottom-left pixel coordinate of that square.
+#for example, i would accessGridSpace([3, 0]) and if each square is 10 pixels long and the board is perfectly aligned, it would return [30, 10]
+def accessGridSpace(cordinate, offsetX=0, offsetY=0): 
     return [(properties['originPoint'][0]+math.ceil(properties['squareSize']*cordinate[0]))+offsetX, (properties['originPoint'][1]+math.ceil(properties['squareSize']*cordinate[1]))+offsetY]
 
-def getCordFromI(Index):
+#input an index, and it will use the boardWidth and boardHeight properties to return a list with the board cordinate.
+#the board cordinate it returns corresponds to the index in the variable "board"
+#you will often see accessGridSpace(getCordFromI(i)), this just takes an index and returns the pixel cordinate that matches that index.
+def getCordFromI(Index): 
     return [Index%properties['boardWidth'], int((Index-(Index%properties['boardWidth']))/properties['boardWidth'])]
 
+#This takes a color; "pixel" and a target color, and if they're similar enough it will return True. 
+#for similarity it can be any number between 0 and 255, 0 being the most strict and 255 being that it will always return True. I typically go with 10.
 def getPixelMatch(pixel, targetColor, similarity):
-    minColor=[targetColor[0]-similarity, targetColor[1]-similarity, targetColor[2]-similarity]
-    maxColor=[targetColor[0]+similarity, targetColor[1]+similarity, targetColor[2]+similarity]
-    pixelHigh=pixel[0] > minColor[0] and pixel[1] > minColor[1] and pixel[2] > minColor[2]
-    pixelLow=pixel[0] < maxColor[0] and pixel[1] < maxColor[1] and pixel[2] < maxColor[2]
+    minColor=[targetColor[0]-similarity, targetColor[1]-similarity, targetColor[2]-similarity] #sets the low end for the darkest that the color can be.
+    maxColor=[targetColor[0]+similarity, targetColor[1]+similarity, targetColor[2]+similarity] #sets the high end for how light the color can be.
+    pixelHigh=pixel[0] > minColor[0] and pixel[1] > minColor[1] and pixel[2] > minColor[2] #checks if the color is light enough for each rgb channel
+    pixelLow=pixel[0] < maxColor[0] and pixel[1] < maxColor[1] and pixel[2] < maxColor[2] #checks if the color is dark enough for each rgb channel
 
-    if pixelHigh and pixelLow:
+    if pixelHigh and pixelLow: #if its not too light and not too dark, goldylocks eats the porridge
         return True
     return False
 
+#uses getPixelMatch to determine what state a square is in based on the color of a specific pixel in the square.
+#the pixel it should check is in the defaultOffset property, and the color that matches each state is in their respective properties.
+#if it doesnt match any of the specified colors, it assumes the square is blank.
 def getState(Index):
     tempPixel=screen.getpixel(accessGridSpace(getCordFromI(Index),properties['defaultOffset'][0],properties['defaultOffset'][1]))
 
@@ -75,6 +87,8 @@ def getState(Index):
         return 7
     return 'b'
 
+#this returns a list of all the tiles surrounding a specific tile (index) that matches the state (look)
+#for example, if i have a square surrounded by flags, and I wrote getSurrounding(4, 'f'), it would return a list of 8 indecies, one for each surrounding tile
 def getSurrounding(index, look):
     surroundList=[[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]]
     baseCord=getCordFromI(index)
@@ -87,51 +101,49 @@ def getSurrounding(index, look):
                 returnList.append(searchIndex)
     return returnList
 
+#just like getSurrounding but it returns the number of tiles instead of a list of their indicies, and it only counts green and flagged squares.
 def countSurroundingFilled(index):
     return len(getSurrounding(index, 'f'))+len(getSurrounding(index, 'g'))
 
+#threding boilerplate
 def on_key_event(e):
     global exitProgram
     if e.name == 'esc':
         exitProgram=True
 
-# Start the keyboard listener in a separate thread
+#starts the keyboard listener in a separate thread
 keyboard_thread = threading.Thread(target=keyboard.hook, args=(on_key_event,))
 keyboard_thread.start()
 
 
 #main function
-start = time.time()
-
-if False:
+if False: #option to enable playing risky at the beginning. if you do, its more likely to lose immediately but if it doesnt then it has a headstart.
     for i in clicks:
         mouse.position = accessGridSpace(i)
         mouse.click(pynput.mouse.Button.left)
-    end=time.time()
 else:
     mouse.position = accessGridSpace(clicks[0])
     mouse.click(pynput.mouse.Button.left)
-    end=time.time()
 
-screen = ImageGrab.grab()
+screen = ImageGrab.grab() #takes a screenshot and filles in the board with its current state
 for i in range(properties['boardWidth']*properties['boardHeight']):
-        board.append(getState(i))
+    board.append(getState(i))
 
 while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249], 10) or exitProgram):
     
     mouse.position = accessGridSpace((math.floor(0.5*properties['boardWidth']), math.floor(0.5*properties['boardHeight'])))
     mouse.click(pynput.mouse.Button.left)
 
-    screen = ImageGrab.grab()
+    screen = ImageGrab.grab() #takes a screenshot and fills in the board with its current state
     for i in range(len(board)):
-        if board[i] != 'f':
+        if board[i] != 'f': #due to the particles that are released when you click a tile, and the speed of my bot, it can mistake flags for green squares, this if is just to make sure it doesnt unflag anything
             board[i] = getState(i)
 
-    for i in range(len(board)):
-        if board[i] in [1, 2, 3, 4, 5, 6, 7]:
-            if countSurroundingFilled(i) == board[i]:
-                surroundingSpaces=getSurrounding(i, 'g')
-                for j in surroundingSpaces:
+    for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbors as its number. if so, it knows that it can flag all surrounding green squares.
+        if board[i] in [1, 2, 3, 4, 5, 6, 7]: #making sure the square is a number.
+            if countSurroundingFilled(i) == board[i]: #checking if it meets the conditions to flag all neghibors
+                surroundingSpaces=getSurrounding(i, 'g') #recording the positions of all green neighbors
+                for j in surroundingSpaces: #process of flagging that which needs to be flagged.
                     board[j]='f'
                     mouse.position = accessGridSpace(getCordFromI(j))
                     mouse.click(pynput.mouse.Button.right)
@@ -139,11 +151,8 @@ while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249
     for i in range(len(board)):
         if board[i] in [1, 2, 3, 4, 5, 6, 7]:
             if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]:
-                end=time.time()
                 mouse.position = accessGridSpace(getCordFromI(i))
                 mouse.click(pynput.mouse.Button.middle)
 
-print(f'Time: {end-start}')
-
-keyboard.unhook_all()
-keyboard_thread.join()
+keyboard.unhook_all() #threading boilerplate
+keyboard_thread.join() #"
