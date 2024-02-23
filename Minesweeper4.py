@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.0
+Minesweeper Solver v4.1
 -PaiShoFish49
 1/11/24
 '''
@@ -12,83 +12,35 @@ import time
 import threading
 import keyboard
 import math
-import pygetwindow as gw
+import json
 
 #variables
-GameRegion=(716,361,487,432)
 board=[]
 mouse = pynput.mouse.Controller()
 exitProgram=False
-vscode = gw.getActiveWindow()
 
-difficulty=3
+difficulty='GoogleHard'
 
-if difficulty==1:
-    originPoint=(0, 225)
-    boardWidth=10
-    boardHeight=8
-    squareSize=45
-    cOne=[25, 118, 210]
-    cTwo=[56, 142, 60]
-    cThree=[211, 47, 47]
-    cFour=[137, 52, 162]
-    cFive=[255, 143, 0]
-    cSix=[0, 151, 167]
-    cSeven=[109, 100, 91]
-    cGreen=[162, 209, 73]
-    cFlag=[242, 54, 7]
-    defaultOffset=(22, -32)
-    blueSpace=(850, 500)
-    minSimilarity=10
-elif difficulty==2:
-    originPoint=(0, 210)
-    boardWidth=18
-    boardHeight=14
-    squareSize=30
-    cOne=[25, 118, 210]
-    cTwo=[56, 142, 60]
-    cThree=[211, 47, 47]
-    cFour=[123, 31, 162]
-    cFive=[255, 143, 0]
-    cSix=[0, 151, 167]
-    cSeven=[109, 100, 91]
-    cGreen=[170, 215, 81]
-    cFlag=[242, 54, 7]
-    defaultOffset=(16, -21)
-    blueSpace=(850, 500)
-    minSimilarity=10
-elif difficulty==3:
-    originPoint=(0, 205)
-    boardWidth=24
-    boardHeight=20
-    squareSize=25
-    cOne=[25, 118, 210]
-    cTwo=[111, 156, 92]
-    cThree=[218, 105, 91]
-    cFour=[136, 52, 161]
-    cFive=[249, 150, 24]
-    cSix=[0, 151, 167]
-    cSeven=[109, 100, 91]
-    cGreen=[170, 215, 81]
-    cFlag=[242, 54, 7]
-    defaultOffset=(12, -17)
-    blueSpace=(850, 500)
-    minSimilarity=10
+with open('Settings.json', 'r') as Settings:
+    try:
+        properties=json.load(Settings)[difficulty]
+    except KeyError:
+        exit('No difficulty level matches the inputed value')
 
 clicks=[
-    [round(0.5*boardWidth), round(0.5*boardHeight)],
-    [round(0.15*boardWidth), round(0.15*boardHeight)],
-    [round(0.85*boardWidth), round(0.15*boardHeight)],
-    [round(0.15*boardWidth), round(0.85*boardHeight)],
-    [round(0.85*boardWidth), round(0.85*boardHeight)]
+    [round(0.5*properties['boardWidth']), round(0.5*properties['boardHeight'])],
+    [round(0.15*properties['boardWidth']), round(0.15*properties['boardHeight'])],
+    [round(0.85*properties['boardWidth']), round(0.15*properties['boardHeight'])],
+    [round(0.15*properties['boardWidth']), round(0.85*properties['boardHeight'])],
+    [round(0.85*properties['boardWidth']), round(0.85*properties['boardHeight'])]
 ]
 
 #functions
 def accessGridSpace(cordinate, offsetX=0, offsetY=0):
-    return [(originPoint[0]+math.ceil(squareSize*cordinate[0]))+offsetX, (originPoint[1]+math.ceil(squareSize*cordinate[1]))+offsetY]
+    return [(properties['originPoint'][0]+math.ceil(properties['squareSize']*cordinate[0]))+offsetX, (properties['originPoint'][1]+math.ceil(properties['squareSize']*cordinate[1]))+offsetY]
 
 def getCordFromI(Index):
-    return [Index%boardWidth, int((Index-(Index%boardWidth))/boardWidth)]
+    return [Index%properties['boardWidth'], int((Index-(Index%properties['boardWidth']))/properties['boardWidth'])]
 
 def getPixelMatch(pixel, targetColor, similarity):
     minColor=[targetColor[0]-similarity, targetColor[1]-similarity, targetColor[2]-similarity]
@@ -101,25 +53,25 @@ def getPixelMatch(pixel, targetColor, similarity):
     return False
 
 def getState(Index):
-    tempPixel=screen.getpixel(accessGridSpace(getCordFromI(Index), defaultOffset[0], defaultOffset[1]))
+    tempPixel=screen.getpixel(accessGridSpace(getCordFromI(Index),properties['defaultOffset'][0],properties['defaultOffset'][1]))
 
-    if getPixelMatch(tempPixel, cGreen, minSimilarity):
+    if getPixelMatch(tempPixel, properties['cGreen'], properties['minSimilarity']):
         return 'g'
-    elif getPixelMatch(tempPixel, cFlag, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cFlag'], properties['minSimilarity']):
         return 'f'
-    elif getPixelMatch(tempPixel, cOne, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cOne'], properties['minSimilarity']):
         return 1
-    elif getPixelMatch(tempPixel, cTwo, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cTwo'], properties['minSimilarity']):
         return 2
-    elif getPixelMatch(tempPixel, cThree, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cThree'], properties['minSimilarity']):
         return 3
-    elif getPixelMatch(tempPixel, cFour, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cFour'], properties['minSimilarity']):
         return 4
-    elif getPixelMatch(tempPixel, cFive, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cFive'], properties['minSimilarity']):
         return 5
-    elif getPixelMatch(tempPixel, cSix, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cSix'], properties['minSimilarity']):
         return 6
-    elif getPixelMatch(tempPixel, cSeven, minSimilarity):
+    elif getPixelMatch(tempPixel, properties['cSeven'], properties['minSimilarity']):
         return 7
     return 'b'
 
@@ -129,8 +81,8 @@ def getSurrounding(index, look):
     returnList=[]
     for i in surroundList:
         searchCord=[baseCord[0]+i[0], baseCord[1]+i[1]]
-        if 0 <= searchCord[0] < boardWidth and 0 <= searchCord[1] < boardHeight:
-            searchIndex=(searchCord[1]*boardWidth)+searchCord[0]
+        if 0 <= searchCord[0] < properties['boardWidth'] and 0 <= searchCord[1] < properties['boardHeight']:
+            searchIndex=(searchCord[1]*properties['boardWidth'])+searchCord[0]
             if board[searchIndex] == look:
                 returnList.append(searchIndex)
     return returnList
@@ -148,7 +100,6 @@ keyboard_thread = threading.Thread(target=keyboard.hook, args=(on_key_event,))
 keyboard_thread.start()
 
 
-
 #main function
 start = time.time()
 
@@ -163,12 +114,12 @@ else:
     end=time.time()
 
 screen = ImageGrab.grab()
-for i in range(boardWidth*boardHeight):
+for i in range(properties['boardWidth']*properties['boardHeight']):
         board.append(getState(i))
 
-while not (getPixelMatch(screen.getpixel(blueSpace), [77, 193, 249], 10) or exitProgram):
+while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249], 10) or exitProgram):
     
-    mouse.position = accessGridSpace((math.floor(0.5*boardWidth), math.floor(0.5*boardHeight)))
+    mouse.position = accessGridSpace((math.floor(0.5*properties['boardWidth']), math.floor(0.5*properties['boardHeight'])))
     mouse.click(pynput.mouse.Button.left)
 
     screen = ImageGrab.grab()
@@ -185,7 +136,6 @@ while not (getPixelMatch(screen.getpixel(blueSpace), [77, 193, 249], 10) or exit
                     mouse.position = accessGridSpace(getCordFromI(j))
                     mouse.click(pynput.mouse.Button.right)
                     
-
     for i in range(len(board)):
         if board[i] in [1, 2, 3, 4, 5, 6, 7]:
             if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]:
@@ -194,13 +144,6 @@ while not (getPixelMatch(screen.getpixel(blueSpace), [77, 193, 249], 10) or exit
                 mouse.click(pynput.mouse.Button.middle)
 
 print(f'Time: {end-start}')
-
-#if not exitProgram:
-    #time.sleep(1)
-    #mouse.position = (850, 700)
-    #mouse.click(pynput.mouse.Button.left)
-    #time.sleep(0.3)
-    #vscode.activate()
 
 keyboard.unhook_all()
 keyboard_thread.join()
