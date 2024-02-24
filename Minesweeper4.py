@@ -144,13 +144,13 @@ while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249
             if countSurroundingFilled(i) == board[i]: #checking if it meets the conditions to flag all neghibors
                 surroundingSpaces=getSurrounding(i, 'g') #recording the positions of all green neighbors
                 for j in surroundingSpaces: #process of flagging that which needs to be flagged.
-                    board[j]='f'
+                    board[j]='f' #marks the space as a flag
                     mouse.position = accessGridSpace(getCordFromI(j))
                     mouse.click(pynput.mouse.Button.right)
                     
-    for i in range(len(board)):
+    for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbor flags as its number, if so, it can clear all surrounding greens by middle clicking.
         if board[i] in [1, 2, 3, 4, 5, 6, 7]:
-            if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]:
+            if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]: #makes sure that there are the correct amount of surrounding flags and at least one green to clear (to not waste time)
                 mouse.position = accessGridSpace(getCordFromI(i))
                 mouse.click(pynput.mouse.Button.middle)
 
