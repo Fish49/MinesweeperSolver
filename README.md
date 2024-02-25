@@ -7,7 +7,7 @@ MinesweeperSover is a clever python bot that can quickly solve Minesweeper!
 
 So far ive only tested this bot on a 1920x1080 screen on Windows 11. chances are it wont work on any other screen size or OS, since it uses precise pixel coordinates to check the state of the screen and do the clicking.
 
-To use it, you must go to https://www.google.com/fbx?fbx=minesweeper and set googles zoom size to 100%. you have to edit the code to reflect what difficulty you're using, at the top of Minesweeper4.py, there should be a variable called "difficulty" set this to the appropriate difficulty that you wish it to solve, 1=easy, 2=medium, 3=hard. If you dont give it the correct value, it wont work, and could even go berserk.
+To use it, you must go to https://www.google.com/fbx?fbx=minesweeper and set googles zoom size to 100%. you have to edit the code to reflect what difficulty you're using, at the top of Minesweeper4.py, there should be a variable called "difficulty" set this to the appropriate difficulty that you wish it to solve, "GoogleEasy"=easy, "GoogleMedium"=medium, "GoogleHard"=hard. If you dont give it the correct value, it wont work, and could even go berserk.
 
 To run the code, you will need to install its dependancies, PIL, pynput, and keyboard. to do this, go to your python console and run each of the following commands:  
 `pip install pillow`  
