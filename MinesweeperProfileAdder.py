@@ -1,8 +1,7 @@
 import pynput
 from PIL import Image, ImageGrab
 import keyboard
-import threading
-import pygetwindow
+import json
 
 profile={
     "originPoint":[0, 0],
@@ -24,7 +23,6 @@ profile={
 }
 
 mouse = pynput.mouse.Controller()
-vscode = pygetwindow.getActiveWindow()
 
 def focus():
     print('click on your minesweeper window to bring it into focus. make sure that you are able to see the vscode window the entire time')
@@ -143,8 +141,15 @@ def getBoardHeight():
 
     profile['boardHeight'] = boardHeight
 
+def export():
+    fullSettings:dict = {} 
+    with open('Settings.json', 'r') as jsonFile:
+        fullSettings = json.load(jsonFile)
+    fullSettings.update(profile)
+
 focus()
 getOriginPoint()
 getSquareSize()
 getBoardWidth()
 getBoardHeight()
+export()
