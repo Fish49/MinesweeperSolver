@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.1
+Minesweeper Solver v4.2
 -PaiShoFish49
 1/11/24
 '''
@@ -12,6 +12,7 @@ import threading #used for the event listener.
 import keyboard #keyboard is used to set up an event listener for ESC in the event that the user wishes to stop the bot
 import math #math is used primarily for rounding values to the nearest block space
 import json #to access the settings profiles.
+import time #to control timing
 
 #variables
 board=[] #this is a list of the state of every space on the minesweeper board. it can be any number 1-8, 'b' for blank, 'g' for green, or 'f' for flag
@@ -22,6 +23,7 @@ exitProgram=False #the main loop has exitProgram as an escape condition. when th
 #you can manually add new profiles for different difficulties or versions of the game. in theory, it should work for any version of minesweeper with very few exeptions.
 #TODO: Make a tool to help users automatically make new settings profiles.
 difficulty='GoogleHard' 
+restartPosition = [1000, 700]
 
 with open('Settings.json', 'r') as Settings: #boilerplate to retrieve the settings profile from the json file
     try:
@@ -117,42 +119,62 @@ keyboard_thread.start()
 
 
 #main function
-if False: #option to enable playing risky at the beginning. if you do, its more likely to lose immediately but if it doesnt then it has a headstart.
-    for i in clicks:
-        mouse.position = accessGridSpace(i)
+while not exitProgram:
+    if False: #option to enable playing risky at the beginning. if you do, its more likely to lose immediately but if it doesnt then it has a headstart.
+        for i in clicks:
+            mouse.position = accessGridSpace(i)
+            mouse.click(pynput.mouse.Button.left)
+    else:
+        mouse.position = accessGridSpace(clicks[0])
         mouse.click(pynput.mouse.Button.left)
-else:
-    mouse.position = accessGridSpace(clicks[0])
-    mouse.click(pynput.mouse.Button.left)
-
-screen = ImageGrab.grab() #takes a screenshot and filles in the board with its current state
-for i in range(properties['boardWidth']*properties['boardHeight']):
-    board.append(getState(i))
-
-while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249], 10) or exitProgram):
     
-    mouse.position = accessGridSpace((math.floor(0.5*properties['boardWidth']), math.floor(0.5*properties['boardHeight'])))
+    board = []
+    screen = ImageGrab.grab() #takes a screenshot and filles in the board with its current state
+    for i in range(properties['boardWidth']*properties['boardHeight']):
+        board.append(getState(i))
+
+    timeOfLastMove = time.time() + 3
+
+    while not (getPixelMatch(screen.getpixel(properties['blueSpace']), [77, 193, 249], 10) or exitProgram):
+        
+        mouse.position = accessGridSpace((math.floor(0.5*properties['boardWidth']), math.floor(0.5*properties['boardHeight'])))
+        mouse.click(pynput.mouse.Button.left)
+
+        screen = ImageGrab.grab() #takes a screenshot and fills in the board with its current state
+        for i in range(len(board)):
+            if board[i] != 'f': #due to the particles that are released when you click a tile, and the speed of my bot, it can mistake flags for green squares, this if is just to make sure it doesnt unflag anything
+                board[i] = getState(i)
+
+        for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbors as its number. if so, it knows that it can flag all surrounding green squares.
+            if board[i] in [1, 2, 3, 4, 5, 6, 7]: #making sure the square is a number.
+                if countSurroundingFilled(i) == board[i]: #checking if it meets the conditions to flag all neghibors
+                    surroundingSpaces=getSurrounding(i, 'g') #recording the positions of all green neighbors
+                    for j in surroundingSpaces: #process of flagging that which needs to be flagged.
+                        board[j]='f' #marks the space as a flag
+                        mouse.position = accessGridSpace(getCordFromI(j))
+                        mouse.click(pynput.mouse.Button.right)
+                        timeOfLastMove = time.time()
+                        
+        for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbor flags as its number, if so, it can clear all surrounding greens by middle clicking.
+            if board[i] in [1, 2, 3, 4, 5, 6, 7]:
+                if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]: #makes sure that there are the correct amount of surrounding flags and at least one green to clear (to not waste time)
+                    mouse.position = accessGridSpace(getCordFromI(i))
+                    mouse.click(pynput.mouse.Button.middle)
+                    timeOfLastMove = time.time()
+        
+        if time.time() - timeOfLastMove > 1: #if nothing is happening, make a guess.
+            tileOfHighestPriority=[0, 0] #the tile with the most number of safe neighbor guesses, first is the tile index, second is its priority.
+            for i in range(len(board)):
+                if board[i] in [1, 2, 3, 4, 5, 6, 7]:
+                    tilePriority = len(getSurrounding(i, 'g')) - board[i] #calculating the probablilty of any of the surrounding greens being bombs. higher number means less likely per neighboring green.
+                    if  tilePriority > tileOfHighestPriority[1]: #if the current tile has a higher priority than any others on the board, its the new highest.
+                        tileOfHighestPriority = [i, tilePriority] #assigning the value
+            mouse.position = accessGridSpace(getCordFromI(getSurrounding(tileOfHighestPriority[0], 'g')[0]))
+            mouse.click(pynput.mouse.Button.left)
+            timeOfLastMove = time.time() - 0.5
+
+    mouse.position = restartPosition
     mouse.click(pynput.mouse.Button.left)
-
-    screen = ImageGrab.grab() #takes a screenshot and fills in the board with its current state
-    for i in range(len(board)):
-        if board[i] != 'f': #due to the particles that are released when you click a tile, and the speed of my bot, it can mistake flags for green squares, this if is just to make sure it doesnt unflag anything
-            board[i] = getState(i)
-
-    for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbors as its number. if so, it knows that it can flag all surrounding green squares.
-        if board[i] in [1, 2, 3, 4, 5, 6, 7]: #making sure the square is a number.
-            if countSurroundingFilled(i) == board[i]: #checking if it meets the conditions to flag all neghibors
-                surroundingSpaces=getSurrounding(i, 'g') #recording the positions of all green neighbors
-                for j in surroundingSpaces: #process of flagging that which needs to be flagged.
-                    board[j]='f' #marks the space as a flag
-                    mouse.position = accessGridSpace(getCordFromI(j))
-                    mouse.click(pynput.mouse.Button.right)
-                    
-    for i in range(len(board)): #goes through the board and checks if each tile has the same number of neighbor flags as its number, if so, it can clear all surrounding greens by middle clicking.
-        if board[i] in [1, 2, 3, 4, 5, 6, 7]:
-            if len(getSurrounding(i, 'g'))>0 and len(getSurrounding(i, 'f'))==board[i]: #makes sure that there are the correct amount of surrounding flags and at least one green to clear (to not waste time)
-                mouse.position = accessGridSpace(getCordFromI(i))
-                mouse.click(pynput.mouse.Button.middle)
 
 keyboard.unhook_all() #threading boilerplate
 keyboard_thread.join() #"
