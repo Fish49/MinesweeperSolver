@@ -99,9 +99,29 @@ class Board():
 
 mouse = pynput.mouse.Controller() #setting up the mouse controller.
 
-
 with open('Settings.json', 'r') as SettingsFile:
     propertyProfiles = json.load(SettingsFile)
+
+propertyProfiles.update({
+    'Custom':{
+    "originPoint":[0, 0],
+    "boardWidth":0,
+    "boardHeight":0,
+    "squareSize":0,
+    "cOne":[25, 118, 210],
+    "cTwo":[56, 142, 60],
+    "cThree":[211, 47, 47],
+    "cFour":[123, 31, 162],
+    "cFive":[255, 143, 0],
+    "cSix":[0, 151, 167],
+    "cSeven":[109, 100, 91],
+    "cGreen":[170, 215, 81],
+    "cFlag":[242, 54, 7],
+    "defaultOffset":[16, -21],
+    "blueSpace":[850, 500],
+    "minSimilarity":10
+    }
+})
 
 def on_key_event(e):
     global exitProgram
@@ -189,26 +209,17 @@ def onStart():
     window.deiconify()
 
 def calibrate():
-    newPropertyProfile={
-        'Custom':{
-        "originPoint":[0, 0],
-        "boardWidth":0,
-        "boardHeight":0,
-        "squareSize":0,
-        "cOne":[25, 118, 210],
-        "cTwo":[56, 142, 60],
-        "cThree":[211, 47, 47],
-        "cFour":[123, 31, 162],
-        "cFive":[255, 143, 0],
-        "cSix":[0, 151, 167],
-        "cSeven":[109, 100, 91],
-        "cGreen":[170, 215, 81],
-        "cFlag":[242, 54, 7],
-        "defaultOffset":[16, -21],
-        "blueSpace":[850, 500],
-        "minSimilarity":10
-        }
-    }
+    global propertyProfiles
+
+    if blueSpaceEntry.get() != '':
+        blueSpace = blueSpaceEntry.get().split(',')
+        propertyProfiles['Custom']['blueSpace'] = [int(blueSpace[0]), int(blueSpace[1])]
+    if defaultOffsetEntry.get() != '':
+        defaultOffset = defaultOffsetEntry.get().split(',')
+        propertyProfiles['Custom']['defaultOffset'] = [int(defaultOffset[0]), int(defaultOffset[1])]
+    if minSimilarityEntry.get() != '':
+        minSimilarity = minSimilarityEntry.get()
+        propertyProfiles['Custom']['minSimilarity'] = int(minSimilarity)
 
     while True:
         event = keyboard.read_event()
@@ -229,11 +240,9 @@ def calibrate():
             mousePos[0]+=1
         mouse.position = mousePos
 
-    newPropertyProfile['Custom']['originPoint']=mousePos
+    propertyProfiles['Custom']['originPoint']=mousePos
 
-    propertyProfiles.update(newPropertyProfile)
-
-    mouse.position=newPropertyProfile['Custom']['originPoint']
+    mouse.position=propertyProfiles['Custom']['originPoint']
 
     while True:
         event = keyboard.read_event()
@@ -247,13 +256,13 @@ def calibrate():
         if event.name == 'd':
             mousePos[0]+=1
         if event.name == 'r':
-            mousePos = newPropertyProfile['Custom']['originPoint']
+            mousePos = propertyProfiles['Custom']['originPoint']
         mouse.position = mousePos
 
-    squareSize = mousePos[0]-newPropertyProfile['Custom']['originPoint']
-    newPropertyProfile['Custom']['squareSize'] = squareSize
+    squareSize = mousePos[0]-propertyProfiles['Custom']['originPoint'][0]
+    propertyProfiles['Custom']['squareSize'] = squareSize
 
-    mouse.position=newPropertyProfile['Custom']['originPoint']
+    mouse.position=propertyProfiles['Custom']['originPoint']
 
     boardWidth=1
 
@@ -267,20 +276,17 @@ def calibrate():
             break
 
         if event.name == 'd':
-            mousePos[0] += newPropertyProfile['Custom']['squareSize']
+            mousePos[0] += propertyProfiles['Custom']['squareSize']
             boardWidth += 1
         if event.name == 'r':
-            mousePos = newPropertyProfile['Custom']['originPoint']
+            mousePos = propertyProfiles['Custom']['originPoint']
             boardWidth = 1
 
         mouse.position = mousePos
 
-    newPropertyProfile['Custom']['boardWidth'] = boardWidth
+    propertyProfiles['Custom']['boardWidth'] = boardWidth
 
-    mouse.position = newPropertyProfile['Custom']['originPoint']
-
-    print('\nUse the s key to move the mouse cursor to the bottom-left pixel of the lowest square. hit enter when youre done')
-    print('if you accidentally move your mouse, hit R')
+    mouse.position = propertyProfiles['Custom']['originPoint']
 
     boardHeight=1
 
@@ -294,18 +300,44 @@ def calibrate():
             break
 
         if event.name == 's':
-            mousePos[1]+=newPropertyProfile['Custom']['squareSize']
+            mousePos[1]+=propertyProfiles['Custom']['squareSize']
             boardHeight+=1
         if event.name == 'r':
-            mousePos=newPropertyProfile['Custom']['originPoint']
+            mousePos=propertyProfiles['Custom']['originPoint']
             boardHeight=1
 
         mouse.position = mousePos
 
-    newPropertyProfile['Custom']['boardHeight'] = boardHeight
+    propertyProfiles['Custom']['boardHeight'] = boardHeight
+
+    propertyProfiles.update(propertyProfiles)
+
+def goToPixel():
+    mouse.position = [int(XmouseEntry.get()), int(YmouseEntry.get())]
+
+def useWASD():
+    while True:
+        event = keyboard.read_event()
+        mousePos = list(mouse.position)
+
+        if event.event_type == 'up':
+            continue
+        if event.name == 'enter':
+            break
+
+        if event.name == 'w':
+            mousePos[1]-=1
+        if event.name == 's':
+            mousePos[1]+=1
+        if event.name == 'a':
+            mousePos[0]-=1
+        if event.name == 'd':
+            mousePos[0]+=1
+        mouse.position = mousePos
 
 window = tk.Tk()
 window.title('Minesweeper Solver!')
+window.geometry('300x400')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -320,11 +352,44 @@ risky_play_var.set(False)  # Default risky play disabled
 risky_play_checkbox = tk.Checkbutton(window, text="Enable Risky Play", variable=risky_play_var)
 risky_play_checkbox.pack()
 
+# Entry for X and Y
+XmouseLabel = tk.Label(window, text='X:')
+XmouseEntry = tk.Entry(window)
+YmouseLabel = tk.Label(window, text='Y:')
+YmouseEntry = tk.Entry(window)
+XmouseLabel.pack()
+XmouseEntry.pack()
+YmouseLabel.pack()
+YmouseEntry.pack()
+
+# Go to pixel button
+goToPixelButton = tk.Button(window, text='Go To XY', command=goToPixel)
+goToPixelButton.pack()
+
+#Use wsad button
+useWASDButton = tk.Button(window, text='Use WASD', command=useWASD)
+useWASDButton.pack()
+
+#blueSpace, defaultOffset, and minSimilarity fields
+blueSpaceLabel = tk.Label(window, text='Blue Space (850,500)')
+blueSpaceEntry = tk.Entry(window)
+defaultOffsetLabel = tk.Label(window, text='Default Offset (16,-21)')
+defaultOffsetEntry = tk.Entry(window)
+minSimilarityLabel = tk.Label(window, text='Minimum Similarity (10)')
+minSimilarityEntry = tk.Entry(window)
+blueSpaceLabel.pack()
+blueSpaceEntry.pack()
+defaultOffsetLabel.pack()
+defaultOffsetEntry.pack()
+minSimilarityLabel.pack()
+minSimilarityEntry.pack()
+
+#Calibrate Button
+calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
+calibrateButton.pack()
+
 # Button to start solver
 start_button = tk.Button(window, text="Start Solver", command=onStart)
 start_button.pack()
-
-calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
-calibrateButton.pack
 
 window.mainloop()
