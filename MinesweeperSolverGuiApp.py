@@ -98,6 +98,8 @@ class Board():
         return len(self.getSurrounding(index, 'f'))+len(self.getSurrounding(index, 'g'))
 
 mouse = pynput.mouse.Controller() #setting up the mouse controller.
+mouseOrigin = (0, 0)
+mousePosition = (0, 0)
 
 with open('Settings.json', 'r') as SettingsFile:
     propertyProfiles = json.load(SettingsFile)
@@ -313,31 +315,51 @@ def calibrate():
     propertyProfiles.update(propertyProfiles)
 
 def goToPixel():
+    global mousePosition
     mouse.position = [int(XmouseEntry.get()), int(YmouseEntry.get())]
+    mousePosition = mouse.position
+    useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
 
 def useWASD():
-    while True:
-        event = keyboard.read_event()
-        mousePos = list(mouse.position)
+    global mousePosition
+    event = keyboard.read_event()
+    mousePos = list(mouse.position)
 
-        if event.event_type == 'up':
-            continue
-        if event.name == 'enter':
-            break
+    if event.event_type == 'up':
+        window.after(10, useWASD)
+        return
+    if event.name == 'enter':
+        return
 
-        if event.name == 'w':
-            mousePos[1]-=1
-        if event.name == 's':
-            mousePos[1]+=1
-        if event.name == 'a':
-            mousePos[0]-=1
-        if event.name == 'd':
-            mousePos[0]+=1
-        mouse.position = mousePos
+    if event.name == 'w':
+        mousePos[1]-=1
+    elif event.name == 's':
+        mousePos[1]+=1
+    elif event.name == 'a':
+        mousePos[0]-=1
+    elif event.name == 'd':
+        mousePos[0]+=1
+
+    mouse.position = mousePos
+    mousePosition = mouse.position
+    useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
+    window.after(10, useWASD)
+
+def setOrigin():
+    global mouseOrigin
+    mouseOrigin = mousePosition
+    originLabel.config(text='Origin:' + str(mouseOrigin))
+    useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
+
+def resetOrigin():
+    global mouseOrigin
+    mouseOrigin = (0, 0)
+    originLabel.config(text='Origin:' + str(mouseOrigin))
+    useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
 
 window = tk.Tk()
 window.title('Minesweeper Solver!')
-window.geometry('300x400')
+window.geometry('300x500')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -367,8 +389,16 @@ goToPixelButton = tk.Button(window, text='Go To XY', command=goToPixel)
 goToPixelButton.pack()
 
 #Use wsad button
+useWASDLabel = tk.Label(window, text='Mouse Position:(0, 0)')
+useWASDLabel.pack()
 useWASDButton = tk.Button(window, text='Use WASD', command=useWASD)
 useWASDButton.pack()
+originLabel = tk.Label(window, text='Origin:' + str(mouseOrigin))
+originLabel.pack()
+setOriginButton = tk.Button(window, text='Set Origin', command=setOrigin)
+setOriginButton.pack()
+resetOriginButton = tk.Button(window, text='Reset Origin', command=resetOrigin)
+resetOriginButton.pack()
 
 #blueSpace, defaultOffset, and minSimilarity fields
 blueSpaceLabel = tk.Label(window, text='Blue Space (850,500)')
