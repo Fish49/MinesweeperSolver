@@ -17,7 +17,7 @@ import time #to control timing
 import tkinter as tk #for window stuff.
 
 class Board():
-    def __init__(self, properties) -> None:
+    def __init__(self, properties, clickSpace) -> None:
         self.properties = properties
         self.clicks = [ #these are the areas that the bot will click if you enable it later in the code. If you do, the bot is more likely to lose immediately, but if it doesnt than it has a headstart.
             [round(0.5*properties['boardWidth']), round(0.5*properties['boardHeight'])],
@@ -26,7 +26,7 @@ class Board():
             [round(0.15*properties['boardWidth']), round(0.85*properties['boardHeight'])],
             [round(0.85*properties['boardWidth']), round(0.85*properties['boardHeight'])]
         ]
-        self.restartPosition = [1000, 700]
+        self.clickSpace = clickSpace
         self.board = []
         self.exitProgram = False
 
@@ -133,7 +133,7 @@ def on_key_event(e):
 def onStart():
     global exitProgram
     exitProgram=False
-    mainBoard = Board(propertyProfiles[difficulty_var.get()])
+    mainBoard = Board(propertyProfiles[difficulty_var.get()], clickSpaceEntry.get().split(',') if clickSpaceEntry.get() != '' and difficulty_var.get() == 'Custom' else (1000, 700))
     playRisky = risky_play_var.get()
 
     keyboard_thread = threading.Thread(target=keyboard.hook, args=(on_key_event,))
@@ -200,7 +200,7 @@ def onStart():
                 mouse.click(pynput.mouse.Button.left)
                 timeOfLastMove = time.time() - 0.5
 
-        mouse.position = mainBoard.restartPosition
+        mouse.position = mainBoard.clickSpace
         time.sleep(0.2)
         mouse.click(pynput.mouse.Button.left)
 
@@ -359,7 +359,7 @@ def resetOrigin():
 
 window = tk.Tk()
 window.title('Minesweeper Solver!')
-window.geometry('300x500')
+window.geometry('300x550')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -403,12 +403,16 @@ resetOriginButton.pack()
 #blueSpace, defaultOffset, and minSimilarity fields
 blueSpaceLabel = tk.Label(window, text='Blue Space (850,500)')
 blueSpaceEntry = tk.Entry(window)
+clickSpaceLabel = tk.Label(window, text='Click Space (1000,700)')
+clickSpaceEntry = tk.Entry(window)
 defaultOffsetLabel = tk.Label(window, text='Default Offset (16,-21)')
 defaultOffsetEntry = tk.Entry(window)
 minSimilarityLabel = tk.Label(window, text='Minimum Similarity (10)')
 minSimilarityEntry = tk.Entry(window)
 blueSpaceLabel.pack()
 blueSpaceEntry.pack()
+clickSpaceLabel.pack()
+clickSpaceEntry.pack()
 defaultOffsetLabel.pack()
 defaultOffsetEntry.pack()
 minSimilarityLabel.pack()
