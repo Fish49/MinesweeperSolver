@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.3
+Minesweeper Solver v4.5
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -357,9 +357,13 @@ def resetOrigin():
     originLabel.config(text='Origin:' + str(mouseOrigin))
     useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
 
+def setCustomToMatch():
+    global propertyProfiles
+    propertyProfiles['Custom'] = propertyProfiles[difficulty_var.get()]
+
 window = tk.Tk()
 window.title('Minesweeper Solver!')
-window.geometry('300x550')
+window.geometry('300x600')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -421,6 +425,9 @@ minSimilarityEntry.pack()
 #Calibrate Button
 calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
 calibrateButton.pack()
+
+setCustomToMatchButton = tk.Button(window, text='Set Custom To Match', command=setCustomToMatch)
+setCustomToMatchButton.pack()
 
 # Button to start solver
 start_button = tk.Button(window, text="Start Solver", command=onStart)
