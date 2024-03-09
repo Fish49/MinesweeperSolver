@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.5.1
+Minesweeper Solver v4.5.2
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -131,7 +131,19 @@ def on_key_event(e):
         exitProgram=True
 
 def onStart():
+    global propertyProfiles
     global exitProgram
+
+    if blueSpaceEntry.get() != '':
+        blueSpace = blueSpaceEntry.get().split(',')
+        propertyProfiles['Custom']['blueSpace'] = [int(blueSpace[0]), int(blueSpace[1])]
+    if defaultOffsetEntry.get() != '':
+        defaultOffset = defaultOffsetEntry.get().split(',')
+        propertyProfiles['Custom']['defaultOffset'] = [int(defaultOffset[0]), int(defaultOffset[1])]
+    if minSimilarityEntry.get() != '':
+        minSimilarity = minSimilarityEntry.get()
+        propertyProfiles['Custom']['minSimilarity'] = int(minSimilarity)
+        
     exitProgram=False
     mainBoard = Board(propertyProfiles[difficulty_var.get()], clickSpaceEntry.get().split(',') if clickSpaceEntry.get() != '' and difficulty_var.get() == 'Custom' else (1000, 700))
     playRisky = risky_play_var.get()
@@ -215,18 +227,6 @@ def onStart():
     window.deiconify()
 
 def calibrate():
-    global propertyProfiles
-
-    if blueSpaceEntry.get() != '':
-        blueSpace = blueSpaceEntry.get().split(',')
-        propertyProfiles['Custom']['blueSpace'] = [int(blueSpace[0]), int(blueSpace[1])]
-    if defaultOffsetEntry.get() != '':
-        defaultOffset = defaultOffsetEntry.get().split(',')
-        propertyProfiles['Custom']['defaultOffset'] = [int(defaultOffset[0]), int(defaultOffset[1])]
-    if minSimilarityEntry.get() != '':
-        minSimilarity = minSimilarityEntry.get()
-        propertyProfiles['Custom']['minSimilarity'] = int(minSimilarity)
-
     while True:
         event = keyboard.read_event()
         mousePos = list(mouse.position)
@@ -434,6 +434,8 @@ minSimilarityEntry.pack()
 #Calibrate Button
 calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
 calibrateButton.pack()
+calibrationLabel = tk.Label(window, text='')
+calibrationLabel.pack()
 
 setCustomToMatchButton = tk.Button(window, text='Set Custom To Match', command=setCustomToMatch)
 setCustomToMatchButton.pack()
