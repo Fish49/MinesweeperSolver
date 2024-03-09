@@ -147,6 +147,7 @@ def onStart():
     exitProgram=False
     mainBoard = Board(propertyProfiles[difficulty_var.get()], clickSpaceEntry.get().split(',') if clickSpaceEntry.get() != '' and difficulty_var.get() == 'Custom' else (1000, 700))
     playRisky = risky_play_var.get()
+    repeat = repeatToggleVar.get()
 
     keyboard_thread = threading.Thread(target=keyboard.hook, args=(on_key_event,))
     keyboard_thread.start()
@@ -211,6 +212,9 @@ def onStart():
                             break
                 mouse.click(pynput.mouse.Button.left)
                 timeOfLastMove = time.time() - 0.5
+
+        if not repeat:
+            break
 
         mouse.position = mainBoard.clickSpace
         time.sleep(0.2)
@@ -367,6 +371,7 @@ window.geometry('300x600')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
+difficulty_var.set(str(list(propertyProfiles.keys())[0]))
 difficulty_label = tk.Label(window, text="Select Difficulty:")
 difficulty_label.pack()
 difficulty_dropdown = tk.OptionMenu(window, difficulty_var, *propertyProfiles.keys())
@@ -377,6 +382,10 @@ risky_play_var = tk.BooleanVar()
 risky_play_var.set(False)  # Default risky play disabled
 risky_play_checkbox = tk.Checkbutton(window, text="Enable Risky Play", variable=risky_play_var)
 risky_play_checkbox.pack()
+repeatToggleVar = tk.BooleanVar()
+repeatToggleVar.set(True)
+repeatToggleCheckbox = tk.Checkbutton(window, text='Repeat', variable=repeatToggleVar)
+repeatToggleCheckbox.pack()
 
 # Entry for X and Y
 XmouseLabel = tk.Label(window, text='X:')
