@@ -1,13 +1,13 @@
 #head
 '''
-Minesweeper Solver v4.5.2
+Minesweeper Solver v4.5.3
 Yet another python file.
 -PaiShoFish49
 2/29/24
 '''
 
 #imports
-from PIL import ImageGrab #to get access to the contents of the screen. this is how it gets the board data
+from PIL import ImageGrab, Image, ImageTk, ImageDraw #to get access to the contents of the screen. this is how it gets the board data
 import pynput #used to control the mouse
 import threading #used for the event listener.
 import keyboard #keyboard is used to set up an event listener for ESC in the event that the user wishes to stop the bot
@@ -100,6 +100,7 @@ class Board():
 mouse = pynput.mouse.Controller() #setting up the mouse controller.
 mouseOrigin = (0, 0)
 mousePosition = (0, 0)
+blankColors = []
 
 with open('Settings.json', 'r') as SettingsFile:
     propertyProfiles = json.load(SettingsFile)
@@ -226,97 +227,119 @@ def onStart():
     time.sleep(0.3)
     window.deiconify()
 
-def calibrate():
-    while True:
-        event = keyboard.read_event()
-        mousePos = list(mouse.position)
+def calibrate(step):
+    if step == 0:
+        while True:
+            event = keyboard.read_event()
+            mousePos = list(mouse.position)
 
-        if event.event_type == 'up':
-            continue
-        if event.name == 'enter':
-            break
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
 
-        if event.name == 'w':
-            mousePos[1]-=1
-        if event.name == 's':
-            mousePos[1]+=1
-        if event.name == 'a':
-            mousePos[0]-=1
-        if event.name == 'd':
-            mousePos[0]+=1
-        mouse.position = mousePos
+            if event.name == 'w':
+                mousePos[1]-=1
+            if event.name == 's':
+                mousePos[1]+=1
+            if event.name == 'a':
+                mousePos[0]-=1
+            if event.name == 'd':
+                mousePos[0]+=1
+            mouse.position = mousePos
 
-    propertyProfiles['Custom']['originPoint']=mousePos
+        propertyProfiles['Custom']['originPoint']=mousePos
 
-    mouse.position=propertyProfiles['Custom']['originPoint']
+        mouse.position=propertyProfiles['Custom']['originPoint']
 
-    while True:
-        event = keyboard.read_event()
-        mousePos = list(mouse.position)
+        calibrationLabel.config(text='use D key to locate the bottom-left pixel of the tile to the right, hit the r key to reset. when youre done hit ENTER')
+        window.after(10, calibrate, 1)
+        return
 
-        if event.event_type == 'up':
-            continue
-        if event.name == 'enter':
-            break
+    if step == 1:
+        while True:
+            event = keyboard.read_event()
+            mousePos = list(mouse.position)
 
-        if event.name == 'd':
-            mousePos[0]+=1
-        if event.name == 'r':
-            mousePos = propertyProfiles['Custom']['originPoint']
-        mouse.position = mousePos
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
 
-    squareSize = mousePos[0]-propertyProfiles['Custom']['originPoint'][0]
-    propertyProfiles['Custom']['squareSize'] = squareSize
+            if event.name == 'd':
+                mousePos[0]+=1
+            if event.name == 'r':
+                mousePos = propertyProfiles['Custom']['originPoint']
+            mouse.position = mousePos
 
-    mouse.position=propertyProfiles['Custom']['originPoint']
+        squareSize = mousePos[0]-propertyProfiles['Custom']['originPoint'][0]
+        propertyProfiles['Custom']['squareSize'] = squareSize
 
-    boardWidth=1
+        mouse.position=propertyProfiles['Custom']['originPoint']
 
-    while True:
-        event = keyboard.read_event()
-        mousePos = list(mouse.position)
+        calibrationLabel.config(text='use D key to locate the bottom-left pixel of the rightmost tile, hit the r key to reset. when youre done hit ENTER')
+        window.after(10, calibrate, 2)
+        return
 
-        if event.event_type == 'up':
-            continue
-        if event.name == 'enter':
-            break
+    if step == 2:
+        boardWidth=1
 
-        if event.name == 'd':
-            mousePos[0] += propertyProfiles['Custom']['squareSize']
-            boardWidth += 1
-        if event.name == 'r':
-            mousePos = propertyProfiles['Custom']['originPoint']
-            boardWidth = 1
+        while True:
+            event = keyboard.read_event()
+            mousePos = list(mouse.position)
 
-        mouse.position = mousePos
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
 
-    propertyProfiles['Custom']['boardWidth'] = boardWidth
+            if event.name == 'd':
+                mousePos[0] += propertyProfiles['Custom']['squareSize']
+                boardWidth += 1
+            if event.name == 'r':
+                mousePos = propertyProfiles['Custom']['originPoint']
+                boardWidth = 1
 
-    mouse.position = propertyProfiles['Custom']['originPoint']
+            mouse.position = mousePos
 
-    boardHeight=1
+        propertyProfiles['Custom']['boardWidth'] = boardWidth
 
-    while True:
-        event = keyboard.read_event()
-        mousePos = list(mouse.position)
+        mouse.position = propertyProfiles['Custom']['originPoint']
 
-        if event.event_type == 'up':
-            continue
-        if event.name == 'enter':
-            break
+        calibrationLabel.config(text='use S key to locate the bottom-left pixel of the lowest tile, hit the r key to reset. when youre done hit ENTER')
+        window.after(10, calibrate, 3)
+        return
 
-        if event.name == 's':
-            mousePos[1]+=propertyProfiles['Custom']['squareSize']
-            boardHeight+=1
-        if event.name == 'r':
-            mousePos=propertyProfiles['Custom']['originPoint']
-            boardHeight=1
+    if step == 3:
+        boardHeight=1
 
-        mouse.position = mousePos
+        while True:
+            event = keyboard.read_event()
+            mousePos = list(mouse.position)
 
-    propertyProfiles['Custom']['boardHeight'] = boardHeight
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
 
-    propertyProfiles.update(propertyProfiles)
+            if event.name == 's':
+                mousePos[1]+=propertyProfiles['Custom']['squareSize']
+                boardHeight+=1
+            if event.name == 'r':
+                mousePos=propertyProfiles['Custom']['originPoint']
+                boardHeight=1
+
+            mouse.position = mousePos
+
+        propertyProfiles['Custom']['boardHeight'] = boardHeight
+
+        propertyProfiles.update(propertyProfiles)
+
+        calibrationLabel.config(text='')
+
+def startCalibrate():
+    calibrationLabel.config(text='use WASD to locate the bottom-left pixel of the top-left square on the board. when youre done hit ENTER', wraplength=window.winfo_width())
+    window.after(10, calibrate, 0)
 
 def goToPixel():
     global mousePosition
@@ -361,13 +384,41 @@ def resetOrigin():
     originLabel.config(text='Origin:' + str(mouseOrigin))
     useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
 
+def addNewBlank():
+    global blankColors
+    while True:
+        event = keyboard.read_event()
+
+        if event.event_type == 'up':
+            continue
+        if event.name == 'enter':
+            break
+
+    screen = ImageGrab.grab()
+    newBlankColor = screen.getpixel(mouse.position)
+    blankColors.append(newBlankColor)
+    blankColorsImage = Image.new('RGB', (32*len(blankColors), 32), (0, 0, 0))
+    for i in range(len(blankColors)):
+        blankColorsDraw = ImageDraw.Draw(blankColorsImage)
+        blankColorsDraw.rectangle((i*32, 0, (i*32)+32, 32), fill=blankColors[i])
+    blankColorsTkImage = ImageTk.PhotoImage(blankColorsImage)
+    blanksLabel.config(image=blankColorsTkImage)
+    
+def solveForColors():
+    colorsWindow = tk.Tk()
+    blanksLabel = tk.Label(colorsWindow)
+    blanksLabel.pack()
+    addNewBlankButton = tk.Button(colorsWindow, text='Add New Blank Color', command=addNewBlank)
+    addNewBlankButton.pack()
+    colorsWindow.mainloop()
+
 def setCustomToMatch():
     global propertyProfiles
     propertyProfiles['Custom'] = propertyProfiles[difficulty_var.get()]
 
 window = tk.Tk()
 window.title('Minesweeper Solver!')
-window.geometry('300x600')
+window.geometry('300x650')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -432,10 +483,13 @@ minSimilarityLabel.pack()
 minSimilarityEntry.pack()
 
 #Calibrate Button
-calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
+calibrateButton = tk.Button(window, text='Calibrate', command=startCalibrate)
 calibrateButton.pack()
-calibrationLabel = tk.Label(window, text='')
-calibrationLabel.pack()
+calibrationLabel = tk.Label(window, text='', wraplength=window.winfo_width(), anchor='w', justify='left')
+calibrationLabel.pack(fill='x', expand=False)
+
+solveForColorsButton = tk.Button(window, text='Solve For Colors', command=solveForColors)
+solveForColorsButton.pack()
 
 setCustomToMatchButton = tk.Button(window, text='Set Custom To Match', command=setCustomToMatch)
 setCustomToMatchButton.pack()
