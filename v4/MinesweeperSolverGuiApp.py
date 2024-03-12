@@ -1,13 +1,13 @@
 #head
 '''
-Minesweeper Solver v4.5.2
+Minesweeper Solver v4.6
 Yet another python file.
 -PaiShoFish49
 2/29/24
 '''
 
 #imports
-from PIL import ImageGrab #to get access to the contents of the screen. this is how it gets the board data
+from PIL import ImageGrab, Image, ImageTk, ImageDraw #to get access to the contents of the screen. this is how it gets the board data
 import pynput #used to control the mouse
 import threading #used for the event listener.
 import keyboard #keyboard is used to set up an event listener for ESC in the event that the user wishes to stop the bot
@@ -107,9 +107,9 @@ with open('Settings.json', 'r') as SettingsFile:
 propertyProfiles.update({
     'Custom':{
     "originPoint":[0, 0],
-    "boardWidth":0,
-    "boardHeight":0,
-    "squareSize":0,
+    "boardWidth":1,
+    "boardHeight":1,
+    "squareSize":1,
     "cOne":[25, 118, 210],
     "cTwo":[56, 142, 60],
     "cThree":[211, 47, 47],
@@ -227,6 +227,9 @@ def onStart():
     window.deiconify()
 
 def calibrate():
+    calibrationLabel.config(text='use WASD to locate the bottom-left pixel of the top-left square on the board. when youre done hit ENTER', wraplength=window.winfo_width())
+    calibrationLabel.update()
+
     while True:
         event = keyboard.read_event()
         mousePos = list(mouse.position)
@@ -250,6 +253,9 @@ def calibrate():
 
     mouse.position=propertyProfiles['Custom']['originPoint']
 
+    calibrationLabel.config(text='use D key to locate the bottom-left pixel of the tile to the right, hit the r key to reset. when youre done hit ENTER')
+    calibrationLabel.update()
+
     while True:
         event = keyboard.read_event()
         mousePos = list(mouse.position)
@@ -270,7 +276,11 @@ def calibrate():
 
     mouse.position=propertyProfiles['Custom']['originPoint']
 
-    boardWidth=1
+    calibrationLabel.config(text='use D key to locate the bottom-left pixel of the rightmost tile, hit the r key to reset. when youre done hit ENTER')
+    calibrationLabel.update()
+
+    boardWidth = 1
+    boardHeight = 1
 
     while True:
         event = keyboard.read_event()
@@ -294,7 +304,8 @@ def calibrate():
 
     mouse.position = propertyProfiles['Custom']['originPoint']
 
-    boardHeight=1
+    calibrationLabel.config(text='use S key to locate the bottom-left pixel of the lowest tile, hit the r key to reset. when youre done hit ENTER')
+    calibrationLabel.update()
 
     while True:
         event = keyboard.read_event()
@@ -317,6 +328,9 @@ def calibrate():
     propertyProfiles['Custom']['boardHeight'] = boardHeight
 
     propertyProfiles.update(propertyProfiles)
+
+    calibrationLabel.config(text='')
+    calibrationLabel.update()
 
 def goToPixel():
     global mousePosition
@@ -361,13 +375,157 @@ def resetOrigin():
     originLabel.config(text='Origin:' + str(mouseOrigin))
     useWASDLabel.config(text = 'Mouse Position:' + str((mousePosition[0]-mouseOrigin[0], mousePosition[1]-mouseOrigin[1])))
 
+def solveForColors():
+    def addNewBlank():
+        global mouse
+        nonlocal blankColorsTkImage
+        while True:
+            event = keyboard.read_event()
+
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
+
+        mousePosition = mouse.position
+        mouse.position = (0, 0)
+        blankColors.append(ImageGrab.grab().getpixel(mousePosition))
+
+        blankColorsImage = Image.new('RGB', (32*len(blankColors), 32), (0, 0, 0))
+
+        blankColorsDraw = ImageDraw.Draw(blankColorsImage)
+        for i in range(len(blankColors)):
+            blankColorsDraw.rectangle((i*32, 0, (i*32)+32, 32), fill=blankColors[i])
+
+        blankColorsTkImage = ImageTk.PhotoImage(blankColorsImage)
+        blanksLabel.config(image=blankColorsTkImage)
+        blanksLabel.update()
+
+    def clearAllBlanks():
+        nonlocal blankColorsTkImage
+        blankColors.clear()
+        blankColorsImage = Image.new('RGB', (32, 32), (255, 255, 255))
+
+        blankColorsTkImage = ImageTk.PhotoImage(blankColorsImage)
+        blanksLabel.config(image=blankColorsTkImage)
+        blanksLabel.update()
+    
+    def getPixelMatch(pixel, targetColor, similarity):
+        minColor=[targetColor[0]-similarity, targetColor[1]-similarity, targetColor[2]-similarity] #sets the low end for the darkest that the color can be.
+        maxColor=[targetColor[0]+similarity, targetColor[1]+similarity, targetColor[2]+similarity] #sets the high end for how light the color can be.
+        pixelHigh=pixel[0] > minColor[0] and pixel[1] > minColor[1] and pixel[2] > minColor[2] #checks if the color is light enough for each rgb channel
+        pixelLow=pixel[0] < maxColor[0] and pixel[1] < maxColor[1] and pixel[2] < maxColor[2] #checks if the color is dark enough for each rgb channel
+
+        if pixelHigh and pixelLow: #if its not too light and not too dark, goldylocks eats the porridge
+            return True
+        return False
+    
+    def addNewNum():
+        global mouse
+        nonlocal bigNumberImage
+        nonlocal numberTkImage
+
+        while True:
+            event = keyboard.read_event()
+
+            if event.event_type == 'up':
+                continue
+            if event.name == 'enter':
+                break
+        
+        pixelOnBoard = (mouse.position[0] - propertyProfiles['Custom']['originPoint'][0], mouse.position[1] - propertyProfiles['Custom']['originPoint'][1])
+        alignedPixelOnBoard = ((pixelOnBoard[0] // propertyProfiles['Custom']['squareSize'])*propertyProfiles['Custom']['squareSize'], (pixelOnBoard[1] // propertyProfiles['Custom']['squareSize'])*propertyProfiles['Custom']['squareSize'])
+        TLPixelOnScreen = (alignedPixelOnBoard[0] + propertyProfiles['Custom']['originPoint'][0], alignedPixelOnBoard[1] + propertyProfiles['Custom']['originPoint'][1])
+        BRPixelOnScreen = (TLPixelOnScreen[0] + propertyProfiles['Custom']['squareSize'], TLPixelOnScreen[1] + propertyProfiles['Custom']['squareSize'])
+        
+        mouse.position = (0, 0)
+        time.sleep(0.2)
+        squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen))
+
+        for i in range(propertyProfiles['Custom']['squareSize']):
+            for j in range(propertyProfiles['Custom']['squareSize']):
+                for k in blankColors:
+                    if getPixelMatch(squareImage.getpixel((j, i)), k, 30):
+                        numberImage.putpixel((j, i), (0, 0, 0))
+
+        for i in range(propertyProfiles['Custom']['squareSize']):
+            for j in range(propertyProfiles['Custom']['squareSize']):
+                if ((i%2 == 0) ^ (j%2 == 0)) and numberImage.getpixel((j, i)) == (0, 0, 0):
+                    numberImage.putpixel((j, i), (100, 100, 100))
+        
+        bigNumberImage = numberImage.resize((propertyProfiles['Custom']['squareSize']*4, propertyProfiles['Custom']['squareSize']*4), Image.Resampling.NEAREST)
+        numberTkImage = ImageTk.PhotoImage(bigNumberImage)
+        numberLabel.config(image=numberTkImage)
+        numberLabel.update()
+
+    def clearNumbers():
+        nonlocal numberImage
+        nonlocal bigNumberImage
+        nonlocal numberTkImage
+
+        numberImage = Image.new('RGB', (propertyProfiles['Custom']['squareSize'], propertyProfiles['Custom']['squareSize']), (255, 255, 255))
+        bigNumberImage = numberImage.resize((propertyProfiles['Custom']['squareSize']*4, propertyProfiles['Custom']['squareSize']*4), Image.Resampling.NEAREST)
+        numberTkImage = ImageTk.PhotoImage(bigNumberImage)
+        numberLabel.config(image=numberTkImage)
+        numberLabel.update()
+    
+    def highlightPixel():
+        nonlocal bigNumberImage
+        nonlocal numberTkImage
+
+        markedNumberImage = numberImage.copy()
+        markedNumberImage.putpixel((abs(int(XpixelEntry.get())), propertyProfiles['Custom']['squareSize']-(abs(int(YpixelEntry.get()))+1)), (255, 0, 0))
+        bigNumberImage = markedNumberImage.resize((propertyProfiles['Custom']['squareSize']*4, propertyProfiles['Custom']['squareSize']*4), Image.Resampling.NEAREST)
+        numberTkImage = ImageTk.PhotoImage(bigNumberImage)
+        numberLabel.config(image=numberTkImage)
+        numberLabel.update()
+
+    colorsWindow = tk.Toplevel(window)
+    colorsWindow.title('Solve For Colors')
+    colorsWindow.geometry('300x500')
+
+    blankColors = []
+    blankColorsImage = Image.new('RGB', (32, 32), (255, 255, 255))
+    blankColorsTkImage = ImageTk.PhotoImage(blankColorsImage)
+    blanksLabel = tk.Label(colorsWindow, image=blankColorsTkImage)
+    blanksLabel.pack()
+
+    addNewBlankButton = tk.Button(colorsWindow, text='Add New Blank Color', command=addNewBlank)
+    addNewBlankButton.pack()
+    clearBlanksButton = tk.Button(colorsWindow, text='Clear All Blanks', command=clearAllBlanks)
+    clearBlanksButton.pack()
+
+    numberImage = Image.new('RGB', (propertyProfiles['Custom']['squareSize'], propertyProfiles['Custom']['squareSize']), (255, 255, 255))
+    bigNumberImage = numberImage.resize((propertyProfiles['Custom']['squareSize']*4, propertyProfiles['Custom']['squareSize']*4), Image.Resampling.NEAREST)
+    numberTkImage = ImageTk.PhotoImage(bigNumberImage)
+
+    numberLabel = tk.Label(colorsWindow, image=numberTkImage)
+    numberLabel.pack()
+
+    addNewNumButton = tk.Button(colorsWindow, text='Add New Number', command=addNewNum)
+    addNewNumButton.pack()
+    clearNumButton = tk.Button(colorsWindow, text='Clear Numbers', command=clearNumbers)
+    clearNumButton.pack()
+
+    XpixelLabel = tk.Label(colorsWindow, text='X:')
+    XpixelEntry = tk.Entry(colorsWindow)
+    YpixelLabel = tk.Label(colorsWindow, text='Y:')
+    YpixelEntry = tk.Entry(colorsWindow)
+    XpixelLabel.pack()
+    XpixelEntry.pack()
+    YpixelLabel.pack()
+    YpixelEntry.pack()
+
+    goToPixelButton = tk.Button(colorsWindow, text='Highlight XY', command=highlightPixel)
+    goToPixelButton.pack()
+
 def setCustomToMatch():
     global propertyProfiles
     propertyProfiles['Custom'] = propertyProfiles[difficulty_var.get()]
 
 window = tk.Tk()
 window.title('Minesweeper Solver!')
-window.geometry('300x600')
+window.geometry('300x650')
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
@@ -434,8 +592,11 @@ minSimilarityEntry.pack()
 #Calibrate Button
 calibrateButton = tk.Button(window, text='Calibrate', command=calibrate)
 calibrateButton.pack()
-calibrationLabel = tk.Label(window, text='')
-calibrationLabel.pack()
+calibrationLabel = tk.Label(window, text='', wraplength=window.winfo_width(), anchor='w', justify='left')
+calibrationLabel.pack(fill='x', expand=False)
+
+solveForColorsButton = tk.Button(window, text='Solve For Colors', command=solveForColors)
+solveForColorsButton.pack()
 
 setCustomToMatchButton = tk.Button(window, text='Set Custom To Match', command=setCustomToMatch)
 setCustomToMatchButton.pack()
