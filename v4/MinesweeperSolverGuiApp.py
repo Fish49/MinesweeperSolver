@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.6
+Minesweeper Solver v4.6.1
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -32,8 +32,11 @@ class Board():
 
     #input a board cordinate as a tuple or list, and it will return the bottom-left pixel coordinate of that square.
     #for example, i would accessGridSpace([3, 0]) and if each square is 10 pixels long and the board is perfectly aligned, it would return [30, 10]
-    def accessGridSpace(self, cordinate, offsetX=0, offsetY=0): 
-        return [(self.properties['originPoint'][0]+math.ceil(self.properties['squareSize']*cordinate[0]))+offsetX, (self.properties['originPoint'][1]+math.ceil(self.properties['squareSize']*cordinate[1]))+offsetY]
+    def accessGridSpace(self, cordinate, offsetX=0, offsetY=0, considerOrigin=True):
+        startingPoint = self.properties['originPoint'] if considerOrigin else (0, self.properties['squareSize']-1)
+        pixelCordinate = (self.properties['squareSize']*cordinate[0], self.properties['squareSize']*cordinate[1])
+        alignedPixelCordinate = (pixelCordinate[0]+startingPoint[0]+offsetX, pixelCordinate[1]+startingPoint[1]+offsetY)
+        return alignedPixelCordinate
 
     #input an index, and it will use the boardWidth and boardHeight properties to return a list with the board cordinate.
     #the board cordinate it returns corresponds to the index in the variable "board"
@@ -57,7 +60,7 @@ class Board():
     #the pixel it should check is in the defaultOffset property, and the color that matches each state is in their respective properties.
     #if it doesnt match any of the specified colors, it assumes the square is blank.
     def getState(self, Index, screen):
-        tempPixel=screen.getpixel(self.accessGridSpace(self.getCordFromI(Index),self.properties['defaultOffset'][0],self.properties['defaultOffset'][1]))
+        tempPixel=screen.getpixel(self.accessGridSpace(self.getCordFromI(Index), self.properties['defaultOffset'][0], self.properties['defaultOffset'][1], False))
 
         if self.getPixelMatch(tempPixel, self.properties['cGreen'], self.properties['minSimilarity']):
             return 'g'
@@ -96,6 +99,15 @@ class Board():
     #just like getSurrounding but it returns the number of tiles instead of a list of their indicies, and it only counts green and flagged squares.
     def countSurroundingFilled(self, index):
         return len(self.getSurrounding(index, 'f'))+len(self.getSurrounding(index, 'g'))
+    
+    def getScreen(self, blueSpace = False):
+        if blueSpace:
+            screen = ImageGrab.grab((*self.properties['blueSpace'], self.properties['blueSpace'][0]+1, self.properties['blueSpace'][0]+1), all_screens=True)
+        else:
+            TL = (self.properties['originPoint'][0], self.properties['originPoint'][1]-self.properties['squareSize']+1)
+            BR = (TL[0]+(self.properties['squareSize']*(self.properties['boardWidth'])), TL[1]+(self.properties['squareSize']*self.properties['boardHeight']))
+            screen = ImageGrab.grab((*TL, *BR), all_screens=True)
+        return screen
 
 mouse = pynput.mouse.Controller() #setting up the mouse controller.
 mouseOrigin = (0, 0)
@@ -154,6 +166,7 @@ def onStart():
 
     #main function
     while not exitProgram:
+        time.sleep(0.2)
         if playRisky: #option to enable playing risky at the beginning. if you do, its more likely to lose immediately but if it doesnt then it has a headstart.
             for i in mainBoard.clicks:
                 mouse.position = mainBoard.accessGridSpace(i)
@@ -163,18 +176,18 @@ def onStart():
             mouse.click(pynput.mouse.Button.left)
         
         mainBoard.board = []
-        screen = ImageGrab.grab() #takes a screenshot and filles in the board with its current state
+        screen = mainBoard.getScreen() #takes a screenshot and filles in the board with its current state
         for i in range(mainBoard.properties['boardWidth']*mainBoard.properties['boardHeight']):
             mainBoard.board.append(mainBoard.getState(i, screen))
 
         timeOfLastMove = time.time() + 3
 
-        while not (mainBoard.getPixelMatch(screen.getpixel(mainBoard.properties['blueSpace']), [77, 193, 249], 10) or exitProgram):
+        while not (mainBoard.getPixelMatch(mainBoard.getScreen(True).getpixel((0, 0)), [77, 193, 249], 10) or exitProgram):
             
             mouse.position = mainBoard.accessGridSpace((math.floor(0.5*mainBoard.properties['boardWidth']), math.floor(0.5*mainBoard.properties['boardHeight'])))
             mouse.click(pynput.mouse.Button.left)
 
-            screen = ImageGrab.grab() #takes a screenshot and fills in the board with its current state
+            screen = mainBoard.getScreen() #takes a screenshot and fills in the board with its current state
             for i in range(len(mainBoard.board)):
                 if mainBoard.board[i] != 'f': #due to the particles that are released when you click a tile, and the speed of my bot, it can mistake flags for green squares, this if is just to make sure it doesnt unflag anything
                     mainBoard.board[i] = mainBoard.getState(i, screen)
@@ -236,6 +249,8 @@ def calibrate():
 
         if event.event_type == 'up':
             continue
+        if event.name == 'esc':
+                return
         if event.name == 'enter':
             break
 
@@ -262,6 +277,8 @@ def calibrate():
 
         if event.event_type == 'up':
             continue
+        if event.name == 'esc':
+                return
         if event.name == 'enter':
             break
 
@@ -288,6 +305,8 @@ def calibrate():
 
         if event.event_type == 'up':
             continue
+        if event.name == 'esc':
+                return
         if event.name == 'enter':
             break
 
@@ -313,6 +332,8 @@ def calibrate():
 
         if event.event_type == 'up':
             continue
+        if event.name == 'esc':
+                return
         if event.name == 'enter':
             break
 
@@ -384,12 +405,14 @@ def solveForColors():
 
             if event.event_type == 'up':
                 continue
+            if event.name == 'esc':
+                return
             if event.name == 'enter':
                 break
 
         mousePosition = mouse.position
         mouse.position = (0, 0)
-        blankColors.append(ImageGrab.grab().getpixel(mousePosition))
+        blankColors.append(ImageGrab.grab((*mousePosition, mousePosition[0]+1, mousePosition[1]+1), all_screens=True).getpixel((0, 0)))
 
         blankColorsImage = Image.new('RGB', (32*len(blankColors), 32), (0, 0, 0))
 
@@ -430,6 +453,8 @@ def solveForColors():
 
             if event.event_type == 'up':
                 continue
+            if event.name == 'esc':
+                return
             if event.name == 'enter':
                 break
         
@@ -440,7 +465,7 @@ def solveForColors():
         
         mouse.position = (0, 0)
         time.sleep(0.2)
-        squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen))
+        squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen), all_screens=True)
 
         for i in range(propertyProfiles['Custom']['squareSize']):
             for j in range(propertyProfiles['Custom']['squareSize']):
@@ -480,9 +505,49 @@ def solveForColors():
         numberLabel.config(image=numberTkImage)
         numberLabel.update()
 
+    def colorFinder():
+        global propertyProfiles
+        colorOrder = colorOrderInputEntry.get()
+        colorDictionary = {'1':'cOne', '2':'cTwo', '3':'cThree', '4':'cFour', '5':'cFive', '6':'cSix', '7':'cSeven', 'g':'cGreen', 'f':'cFlag'}
+
+        propertyProfiles['Custom']['defaultOffset'] = (abs(int(XpixelEntry.get())), -abs(int(YpixelEntry.get())))
+        i = 0
+
+        while True:
+            event = keyboard.read_event()
+
+            if event.event_type == 'up':
+                continue
+            if event.name == 'esc':
+                return
+            if event.name == 'enter':
+                pixelOnBoard = (mouse.position[0] - propertyProfiles['Custom']['originPoint'][0], mouse.position[1] - propertyProfiles['Custom']['originPoint'][1])
+                alignedPixelOnBoard = ((pixelOnBoard[0] // propertyProfiles['Custom']['squareSize'])*propertyProfiles['Custom']['squareSize'], (pixelOnBoard[1] // propertyProfiles['Custom']['squareSize'])*propertyProfiles['Custom']['squareSize'])
+                TLPixelOnScreen = (alignedPixelOnBoard[0] + propertyProfiles['Custom']['originPoint'][0], alignedPixelOnBoard[1] + propertyProfiles['Custom']['originPoint'][1])
+                BRPixelOnScreen = (TLPixelOnScreen[0] + propertyProfiles['Custom']['squareSize'], TLPixelOnScreen[1] + propertyProfiles['Custom']['squareSize'])
+
+                mouse.position = (0, 0)
+                time.sleep(0.2)
+                squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen), all_screens=True)
+
+                color = squareImage.getpixel((abs(int(XpixelEntry.get())), propertyProfiles['Custom']['squareSize']-(abs(int(YpixelEntry.get()))+1)))
+                propertyProfiles['Custom'][colorDictionary[colorOrder[i]]] = color
+
+                if i >= len(colorOrder)-1:
+                    colorOrderInputLabel.config(text='Order To Enter Numbers (ex. 1234fg)')
+                    break
+                else:
+                    i += 1
+                    colorOrderInputLabel.config(text=colorOrder[i])
+                    colorOrderInputLabel.update()
+
+    def closeColorWindow():
+        colorsWindow.destroy()
+        
+
     colorsWindow = tk.Toplevel(window)
     colorsWindow.title('Solve For Colors')
-    colorsWindow.geometry('300x500')
+    colorsWindow.geometry('300x600')
 
     blankColors = []
     blankColorsImage = Image.new('RGB', (32, 32), (255, 255, 255))
@@ -518,6 +583,16 @@ def solveForColors():
 
     goToPixelButton = tk.Button(colorsWindow, text='Highlight XY', command=highlightPixel)
     goToPixelButton.pack()
+
+    colorOrderInputLabel = tk.Label(colorsWindow, text='Order To Enter Numbers (ex. 1234fg)')
+    colorOrderInputEntry = tk.Entry(colorsWindow)
+    colorFinderButton = tk.Button(colorsWindow, text='Number Color Magic', command=colorFinder)
+    colorOrderInputLabel.pack()
+    colorOrderInputEntry.pack()
+    colorFinderButton.pack()
+
+    closeColorWindowButton = tk.Button(colorsWindow, text='Close', command=closeColorWindow)
+    closeColorWindowButton.pack()
 
 def setCustomToMatch():
     global propertyProfiles
