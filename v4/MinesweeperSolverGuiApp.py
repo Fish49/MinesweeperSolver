@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.6.1
+Minesweeper Solver v4.6.2
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -601,6 +601,7 @@ def setCustomToMatch():
 window = tk.Tk()
 window.title('Minesweeper Solver!')
 window.geometry('300x650')
+window.iconphoto(True, tk.PhotoImage(file='logo.png'))
 
 # Difficulty dropdown
 difficulty_var = tk.StringVar()
