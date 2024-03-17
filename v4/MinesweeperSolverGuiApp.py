@@ -545,6 +545,9 @@ repeatToggleVar.set(True)
 repeatToggleCheckbox = tk.Checkbutton(window, text='Repeat', variable=repeatToggleVar)
 repeatToggleCheckbox.pack()
 
+editCustomButton = tk.Button(window, text='Edit Custom', command=editCustom)
+editCustomButton.pack()
+
 # Entry for X and Y
 XmouseLabel = tk.Label(window, text='X:')
 XmouseEntry = tk.Entry(window)
