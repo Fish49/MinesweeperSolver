@@ -15,6 +15,8 @@ import math #math is used primarily for rounding values to the nearest block spa
 import json #to access the settings profiles.
 import time #to control timing
 import tkinter as tk #for window stuff.
+from tkinter import ttk
+from ttkthemes import ThemedTk
 
 class Board():
     def __init__(self, properties, clickSpace) -> None:
@@ -488,86 +490,100 @@ def editCustom():
             numberLabel.config(image=numberTkImage)
             numberLabel.update()
 
-        colorsWindow = tk.Toplevel(window)
+        def closeColorsWindow():
+            colorsWindow.destroy()
+
+        colorsWindow = tk.Toplevel(editCustomWindow)
         colorsWindow.title('Solve For Colors')
         colorsWindow.geometry('300x500')
 
         blankColors = []
         blankColorsImage = Image.new('RGB', (32, 32), (255, 255, 255))
         blankColorsTkImage = ImageTk.PhotoImage(blankColorsImage)
-        blanksLabel = tk.Label(colorsWindow, image=blankColorsTkImage)
+        blanksLabel = ttk.Label(colorsWindow, image=blankColorsTkImage)
         blanksLabel.pack()
 
-        addNewBlankButton = tk.Button(colorsWindow, text='Add New Blank Color', command=addNewBlank)
+        addNewBlankButton = ttk.Button(colorsWindow, text='Add New Blank Color', command=addNewBlank)
         addNewBlankButton.pack()
-        clearBlanksButton = tk.Button(colorsWindow, text='Clear All Blanks', command=clearAllBlanks)
+        clearBlanksButton = ttk.Button(colorsWindow, text='Clear All Blanks', command=clearAllBlanks)
         clearBlanksButton.pack()
 
         numberImage = Image.new('RGB', (propertyProfiles['Custom']['squareSize'], propertyProfiles['Custom']['squareSize']), (255, 255, 255))
         bigNumberImage = numberImage.resize((propertyProfiles['Custom']['squareSize']*4, propertyProfiles['Custom']['squareSize']*4), Image.Resampling.NEAREST)
         numberTkImage = ImageTk.PhotoImage(bigNumberImage)
 
-        numberLabel = tk.Label(colorsWindow, image=numberTkImage)
+        numberLabel = ttk.Label(colorsWindow, image=numberTkImage)
         numberLabel.pack()
 
-        addNewNumButton = tk.Button(colorsWindow, text='Add New Number', command=addNewNum)
+        addNewNumButton = ttk.Button(colorsWindow, text='Add New Number', command=addNewNum)
         addNewNumButton.pack()
-        clearNumButton = tk.Button(colorsWindow, text='Clear Numbers', command=clearNumbers)
+        clearNumButton = ttk.Button(colorsWindow, text='Clear Numbers', command=clearNumbers)
         clearNumButton.pack()
 
-        XpixelLabel = tk.Label(colorsWindow, text='X:')
-        XpixelEntry = tk.Entry(colorsWindow)
-        YpixelLabel = tk.Label(colorsWindow, text='Y:')
-        YpixelEntry = tk.Entry(colorsWindow)
+        XpixelLabel = ttk.Label(colorsWindow, text='X:')
+        XpixelEntry = ttk.Entry(colorsWindow)
+        YpixelLabel = ttk.Label(colorsWindow, text='Y:')
+        YpixelEntry = ttk.Entry(colorsWindow)
         XpixelLabel.pack()
         XpixelEntry.pack()
         YpixelLabel.pack()
         YpixelEntry.pack()
 
-        goToPixelButton = tk.Button(colorsWindow, text='Highlight XY', command=highlightPixel)
+        goToPixelButton = ttk.Button(colorsWindow, text='Highlight XY', command=highlightPixel)
         goToPixelButton.pack()
+
+        closeColorsWindowButton = ttk.Button(colorsWindow, text='Close', command=closeColorsWindow)
+        closeColorsWindowButton.pack()
 
     def setCustomToMatch():
         global propertyProfiles
         propertyProfiles['Custom'] = propertyProfiles[difficulty_var.get()]
+    
+    def closeEditCustomWindow():
+        editCustomWindow.destroy()
 
     editCustomWindow = tk.Toplevel(window)
+    editCustomWindow.title('Edit Custom Profile')
 
     # Entry for X and Y
-    XmouseLabel = tk.Label(editCustomWindow, text='X:')
-    XmouseEntry = tk.Entry(editCustomWindow)
-    YmouseLabel = tk.Label(editCustomWindow, text='Y:')
-    YmouseEntry = tk.Entry(editCustomWindow)
+    goToPixelFrame = tk.Frame(editCustomWindow, padx=20, pady=20)
+    XmouseLabel = ttk.Label(goToPixelFrame, text='X:')
+    XmouseEntry = ttk.Entry(goToPixelFrame)
+    YmouseLabel = ttk.Label(goToPixelFrame, text='Y:')
+    YmouseEntry = ttk.Entry(goToPixelFrame)
+    goToPixelButton = ttk.Button(goToPixelFrame, text='Go To XY', command=goToPixel)
     XmouseLabel.pack()
     XmouseEntry.pack()
     YmouseLabel.pack()
     YmouseEntry.pack()
-
-    # Go to pixel button
-    goToPixelButton = tk.Button(editCustomWindow, text='Go To XY', command=goToPixel)
     goToPixelButton.pack()
+    goToPixelFrame.grid(column=0, row=0)
 
     #Use wsad button
-    useWASDLabel = tk.Label(editCustomWindow, text='Mouse Position:(0, 0)')
+    useWASDFrame = tk.Frame(editCustomWindow, padx=20, pady=20)
+    useWASDLabel = ttk.Label(useWASDFrame, text='Mouse Position:(0, 0)')
+    useWASDButton = ttk.Button(useWASDFrame, text='Use WASD', command=useWASD)
+    originLabel = ttk.Label(useWASDFrame, text='Origin:' + str(mouseOrigin))
+    setOriginButton = ttk.Button(useWASDFrame, text='Set Origin', command=setOrigin)
+    resetOriginButton = ttk.Button(useWASDFrame, text='Reset Origin', command=resetOrigin)
     useWASDLabel.pack()
-    useWASDButton = tk.Button(editCustomWindow, text='Use WASD', command=useWASD)
     useWASDButton.pack()
-    originLabel = tk.Label(editCustomWindow, text='Origin:' + str(mouseOrigin))
     originLabel.pack()
-    setOriginButton = tk.Button(editCustomWindow, text='Set Origin', command=setOrigin)
     setOriginButton.pack()
-    resetOriginButton = tk.Button(editCustomWindow, text='Reset Origin', command=resetOrigin)
     resetOriginButton.pack()
+    useWASDFrame.grid(column=1, row=0)
 
     #blueSpace, defaultOffset, and minSimilarity fields
-    blueSpaceLabel = tk.Label(editCustomWindow, text='Blue Space (850,500)')
-    blueSpaceEntry = tk.Entry(editCustomWindow)
-    clickSpaceLabel = tk.Label(editCustomWindow, text='Click Space (1000,700)')
-    clickSpaceEntry = tk.Entry(editCustomWindow)
-    defaultOffsetLabel = tk.Label(editCustomWindow, text='Default Offset (16,-21)')
-    defaultOffsetEntry = tk.Entry(editCustomWindow)
-    minSimilarityLabel = tk.Label(editCustomWindow, text='Minimum Similarity (10)')
-    minSimilarityEntry = tk.Entry(editCustomWindow)
+    customEntryFieldsFrame = tk.Frame(editCustomWindow, padx=20, pady=20)
+    blueSpaceLabel = ttk.Label(customEntryFieldsFrame, text='Blue Space (850,500)')
+    blueSpaceEntry = ttk.Entry(customEntryFieldsFrame)
+    clickSpaceLabel = ttk.Label(customEntryFieldsFrame, text='Click Space (1000,700)')
+    clickSpaceEntry = ttk.Entry(customEntryFieldsFrame)
+    defaultOffsetLabel = ttk.Label(customEntryFieldsFrame, text='Default Offset (16,-21)')
+    defaultOffsetEntry = ttk.Entry(customEntryFieldsFrame)
+    minSimilarityLabel = ttk.Label(customEntryFieldsFrame, text='Minimum Similarity (10)')
+    minSimilarityEntry = ttk.Entry(customEntryFieldsFrame)
+    setCustomEntryFieldsButton = ttk.Button(customEntryFieldsFrame, text='Set To Custom', command=setCustomEntryFields)
     blueSpaceLabel.pack()
     blueSpaceEntry.pack()
     clickSpaceLabel.pack()
@@ -576,48 +592,61 @@ def editCustom():
     defaultOffsetEntry.pack()
     minSimilarityLabel.pack()
     minSimilarityEntry.pack()
-    setCustomEntryFieldsButton = tk.Button(editCustomWindow, text='Set To Custom', command=setCustomEntryFields)
+    setCustomEntryFieldsButton.pack()
+    customEntryFieldsFrame.grid(column=0, row=1)
 
     #Calibrate Button
-    calibrateButton = tk.Button(editCustomWindow, text='Calibrate', command=calibrate)
+    calibrateFrame = tk.Frame(editCustomWindow, padx=20, pady=20)
+    calibrateButton = ttk.Button(calibrateFrame, text='Calibrate', command=calibrate)
     calibrateButton.pack()
-    calibrationLabel = tk.Label(editCustomWindow, text='', wraplength=editCustomWindow.winfo_width(), anchor='w', justify='left')
+    calibrationLabel = ttk.Label(calibrateFrame, text='', wraplength=calibrateFrame.winfo_width(), anchor='w', justify='left')
     calibrationLabel.pack(fill='x', expand=False)
 
-    solveForColorsButton = tk.Button(editCustomWindow, text='Solve For Colors', command=solveForColors)
+    solveForColorsButton = ttk.Button(calibrateFrame, text='Solve For Colors', command=solveForColors)
     solveForColorsButton.pack()
 
-    setCustomToMatchButton = tk.Button(editCustomWindow, text='Set Custom To Match', command=setCustomToMatch)
+    setCustomToMatchButton = ttk.Button(calibrateFrame, text='Set Custom To Match', command=setCustomToMatch)
     setCustomToMatchButton.pack()
+    calibrateFrame.grid(column=1, row=1)
 
-window = tk.Tk()
+    closeEditCustomWindowButton = ttk.Button(editCustomWindow, text='Close', command=closeEditCustomWindow)
+    closeEditCustomWindowButton.grid(column=0, row=2, columnspan=2, padx=20, pady=20)
+
+window = ThemedTk(theme='forest')
 window.title('Minesweeper Solver!')
-window.geometry('300x650')
 
 # Difficulty dropdown
+difficultyFrame = ttk.Frame()
 difficulty_var = tk.StringVar()
 difficulty_var.set(str(list(propertyProfiles.keys())[0]))
-difficulty_label = tk.Label(window, text="Select Difficulty:")
+difficulty_label = ttk.Label(difficultyFrame, text="Select Difficulty:")
+difficulty_dropdown = ttk.OptionMenu(difficultyFrame, difficulty_var, *propertyProfiles.keys())
 difficulty_label.pack()
-difficulty_dropdown = tk.OptionMenu(window, difficulty_var, *propertyProfiles.keys())
 difficulty_dropdown.pack()
+difficultyFrame.grid(column=0, row=0, padx=20, pady=20)
 
 # Toggle for risky play
+riskyPlayFrame = ttk.Frame(window)
 risky_play_var = tk.BooleanVar()
-risky_play_var.set(False)  # Default risky play disabled
-risky_play_checkbox = tk.Checkbutton(window, text="Enable Risky Play", variable=risky_play_var)
-risky_play_checkbox.pack()
 repeatToggleVar = tk.BooleanVar()
+repeatToggleCheckbox = ttk.Checkbutton(riskyPlayFrame, text='Repeat', variable=repeatToggleVar)
+risky_play_checkbox = ttk.Checkbutton(riskyPlayFrame, text="Enable Risky Play", variable=risky_play_var)
+risky_play_var.set(False)  # Default risky play disabled
 repeatToggleVar.set(True)
-repeatToggleCheckbox = tk.Checkbutton(window, text='Repeat', variable=repeatToggleVar)
+risky_play_checkbox.pack()
 repeatToggleCheckbox.pack()
+riskyPlayFrame.grid(column=1, row=0, padx=20, pady=20)
 
-editCustomButton = tk.Button(window, text='Edit Custom', command=editCustom)
+startSolverFrame = ttk.Frame(window)
+editCustomButton = ttk.Button(startSolverFrame, text='Edit Custom', command=editCustom)
 editCustomButton.pack()
 
-
 # Button to start solver
-start_button = tk.Button(window, text="Start Solver", command=onStart)
+start_button = ttk.Button(startSolverFrame, text="Start Solver", command=onStart)
 start_button.pack()
+
+quitButton = ttk.Button(startSolverFrame, text='Quit', command=window.destroy)
+quitButton.pack()
+startSolverFrame.grid(row=1, column=0, columnspan=2, padx=20, pady=20)
 
 window.mainloop()
