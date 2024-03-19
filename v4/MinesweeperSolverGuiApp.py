@@ -221,7 +221,7 @@ def onStart():
 
 def editCustom():
     def calibrate():
-        calibrationLabel.config(text='use WASD to locate the bottom-left pixel of the top-left square on the board. when youre done hit ENTER', wraplength=window.winfo_width())
+        calibrationLabel.config(text='use WASD to locate the bottom-left pixel of the top-left square on the board. when youre done hit ENTER', wraplength=calibrateFrame.winfo_width())
         calibrationLabel.update()
 
         while True:
@@ -371,6 +371,7 @@ def editCustom():
 
     def setCustomEntryFields():
         global clickSpace
+        global propertyProfiles
         if blueSpaceEntry.get() != '':
             blueSpace = blueSpaceEntry.get().split(',')
             propertyProfiles['Custom']['blueSpace'] = [int(blueSpace[0]), int(blueSpace[1])]
@@ -495,7 +496,6 @@ def editCustom():
 
         colorsWindow = tk.Toplevel(editCustomWindow)
         colorsWindow.title('Solve For Colors')
-        colorsWindow.geometry('300x500')
 
         blankColors = []
         blankColorsImage = Image.new('RGB', (32, 32), (255, 255, 255))
@@ -504,7 +504,7 @@ def editCustom():
         blanksLabel.pack()
 
         addNewBlankButton = ttk.Button(colorsWindow, text='Add New Blank Color', command=addNewBlank)
-        addNewBlankButton.pack()
+        addNewBlankButton.pack(padx=80)
         clearBlanksButton = ttk.Button(colorsWindow, text='Clear All Blanks', command=clearAllBlanks)
         clearBlanksButton.pack()
 
@@ -537,7 +537,7 @@ def editCustom():
 
     def setCustomToMatch():
         global propertyProfiles
-        propertyProfiles['Custom'] = propertyProfiles[difficulty_var.get()]
+        propertyProfiles['Custom'] = propertyProfiles[setCustomDifficultyVar.get()]
     
     def closeEditCustomWindow():
         editCustomWindow.destroy()
@@ -606,21 +606,26 @@ def editCustom():
     solveForColorsButton.pack()
 
     setCustomToMatchButton = ttk.Button(calibrateFrame, text='Set Custom To Match', command=setCustomToMatch)
+    setCustomDifficultyVar = tk.StringVar()
+    setCustomDifficultyLabel = ttk.Label(calibrateFrame, text="")
+    setCustomDifficultyDropdown = ttk.OptionMenu(calibrateFrame, setCustomDifficultyVar, str(list(propertyProfiles.keys())[0]), *propertyProfiles.keys())
+
+    setCustomDifficultyLabel.pack()
+    setCustomDifficultyDropdown.pack()
     setCustomToMatchButton.pack()
     calibrateFrame.grid(column=1, row=1)
 
     closeEditCustomWindowButton = ttk.Button(editCustomWindow, text='Close', command=closeEditCustomWindow)
     closeEditCustomWindowButton.grid(column=0, row=2, columnspan=2, padx=20, pady=20)
 
-window = ThemedTk(theme='forest')
+window = ThemedTk(theme='breeze')
 window.title('Minesweeper Solver!')
 
 # Difficulty dropdown
 difficultyFrame = ttk.Frame()
 difficulty_var = tk.StringVar()
-difficulty_var.set(str(list(propertyProfiles.keys())[0]))
 difficulty_label = ttk.Label(difficultyFrame, text="Select Difficulty:")
-difficulty_dropdown = ttk.OptionMenu(difficultyFrame, difficulty_var, *propertyProfiles.keys())
+difficulty_dropdown = ttk.OptionMenu(difficultyFrame, difficulty_var, str(list(propertyProfiles.keys())[0]), *propertyProfiles.keys())
 difficulty_label.pack()
 difficulty_dropdown.pack()
 difficultyFrame.grid(column=0, row=0, padx=20, pady=20)
