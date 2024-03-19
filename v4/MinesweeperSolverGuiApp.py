@@ -39,6 +39,7 @@ class Board():
         pixelCordinate = (self.properties['squareSize']*cordinate[0], self.properties['squareSize']*cordinate[1])
         alignedPixelCordinate = (pixelCordinate[0]+startingPoint[0]+offsetX, pixelCordinate[1]+startingPoint[1]+offsetY)
         return alignedPixelCordinate
+
     #input an index, and it will use the boardWidth and boardHeight properties to return a list with the board cordinate.
     #the board cordinate it returns corresponds to the index in the variable "board"
     #you will often see accessGridSpace(getCordFromI(i)), this just takes an index and returns the pixel cordinate that matches that index.
