@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.6.3
+Minesweeper Solver v4.6.4
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -688,6 +688,103 @@ def editCustom():
     closeEditCustomWindowButton = ttk.Button(editCustomWindow, text='Close', command=closeEditCustomWindow)
     closeEditCustomWindowButton.grid(column=0, row=2, columnspan=2, padx=20, pady=20)
 
+def showBoard():
+    showBoardWindow = tk.Toplevel(window)
+    showBoardWindow.title('Show Board')
+
+    zoomed = False
+
+    def getPixelMatch(pixel, targetColor, similarity):
+        minColor=[targetColor[0]-similarity, targetColor[1]-similarity, targetColor[2]-similarity] #sets the low end for the darkest that the color can be.
+        maxColor=[targetColor[0]+similarity, targetColor[1]+similarity, targetColor[2]+similarity] #sets the high end for how light the color can be.
+        pixelHigh=pixel[0] > minColor[0] and pixel[1] > minColor[1] and pixel[2] > minColor[2] #checks if the color is light enough for each rgb channel
+        pixelLow=pixel[0] < maxColor[0] and pixel[1] < maxColor[1] and pixel[2] < maxColor[2] #checks if the color is dark enough for each rgb channel
+
+        if pixelHigh and pixelLow: #if its not too light and not too dark, goldylocks eats the porridge
+            return True
+        return False
+    
+    #uses getPixelMatch to determine what state a square is in based on the color of a specific pixel in the square.
+    #the pixel it should check is in the defaultOffset property, and the color that matches each state is in their respective properties.
+    #if it doesnt match any of the specified colors, it assumes the square is blank.
+    def getState(cord, screen):
+        properties = propertyProfiles[difficulty_var.get()]
+        ajustedDefaultOffset = (properties['defaultOffset'][0], properties['squareSize']+properties['defaultOffset'][1]-1)
+        tempPixel=screen.getpixel((cord[0]*properties['squareSize']+ajustedDefaultOffset[0], cord[1]*properties['squareSize']+ajustedDefaultOffset[1]))
+
+        if getPixelMatch(tempPixel, properties['cGreen'], properties['minSimilarity']):
+            return 'g'
+        elif getPixelMatch(tempPixel, properties['cFlag'], properties['minSimilarity']):
+            return 'f'
+        elif getPixelMatch(tempPixel, properties['cOne'], properties['minSimilarity']):
+            return 1
+        elif getPixelMatch(tempPixel, properties['cTwo'], properties['minSimilarity']):
+            return 2
+        elif getPixelMatch(tempPixel, properties['cThree'], properties['minSimilarity']):
+            return 3
+        elif getPixelMatch(tempPixel, properties['cFour'], properties['minSimilarity']):
+            return 4
+        elif getPixelMatch(tempPixel, properties['cFive'], properties['minSimilarity']):
+            return 5
+        elif getPixelMatch(tempPixel, properties['cSix'], properties['minSimilarity']):
+            return 6
+        elif getPixelMatch(tempPixel, properties['cSeven'], properties['minSimilarity']):
+            return 7
+        return 'b'
+
+    def fetchBoard():
+        nonlocal boardTkImage
+        nonlocal boardImage
+        properties = propertyProfiles[difficulty_var.get()]
+        ajustedDefaultOffset = (properties['defaultOffset'][0], properties['squareSize']+properties['defaultOffset'][1]-1)
+
+        TL = (properties['originPoint'][0], properties['originPoint'][1]-properties['squareSize']+1)
+        BR = (TL[0]+(properties['squareSize']*(properties['boardWidth'])), TL[1]+(properties['squareSize']*properties['boardHeight']))
+        boardScreenshot = ImageGrab.grab((*TL, *BR), all_screens=True)
+        boardImage = boardScreenshot.copy()
+
+        editedBoardImage = ImageDraw.Draw(boardImage)
+
+        for i in range(properties['boardHeight']):
+            for j in range(properties['boardWidth']):
+                TL = (j*properties['squareSize'], i*properties['squareSize'])
+                BR = (TL[0]+properties['squareSize']-1, TL[1]+properties['squareSize']-1)
+                editedBoardImage.rectangle((*TL, *BR), outline=(255, 0, 0) if (i+j)%2==0 else (255, 255, 0))
+
+                editedBoardImage.text((TL[0]+(properties['squareSize']//2), TL[1]+(properties['squareSize']//2)), str(getState((j, i), boardScreenshot)), (0, 0, 0))
+
+                editedBoardImage.point((j*properties['squareSize']+ajustedDefaultOffset[0], i*properties['squareSize']+ajustedDefaultOffset[1]), (0, 0, 0))
+
+        boardTkImage = ImageTk.PhotoImage(boardImage)
+        boardImageLabel.config(image=boardTkImage)
+        boardImageLabel.update()
+
+    def zoom():
+        nonlocal boardTkImage
+        if zoomed:
+            boardTkImage = ImageTk.PhotoImage(boardImage)
+        else:
+            boardTkImage = ImageTk.PhotoImage(boardImage.resize((boardImage.width*2, boardImage.height*2), Image.Resampling.NEAREST))
+        boardImageLabel.config(image=boardTkImage)
+        boardImageLabel.update()
+
+    def closeShowBoardWindow():
+        showBoardWindow.destroy()
+
+    boardImage = Image.new('RGB', (5, 5), (255, 255, 255))
+    boardTkImage = ImageTk.PhotoImage(boardImage)
+    boardImageLabel = ttk.Label(showBoardWindow, image=boardTkImage)
+    boardImageLabel.pack()
+
+    fetchBoardButton = ttk.Button(showBoardWindow, text='Get Board', command=fetchBoard)
+    fetchBoardButton.pack()
+
+    zoomButton = ttk.Button(showBoardWindow, text='Zoom', command=zoom)
+    zoomButton.pack()
+
+    closeShowBoardWindowButton = ttk.Button(showBoardWindow, text='Close', command=closeShowBoardWindow)
+    closeShowBoardWindowButton.pack(padx=80)
+
 window = ThemedTk(theme='breeze')
 window.title('Minesweeper Solver!')
 window.iconphoto(True, tk.PhotoImage(file='logo.png'))
@@ -716,6 +813,9 @@ riskyPlayFrame.grid(column=1, row=0, padx=20, pady=20)
 startSolverFrame = ttk.Frame(window)
 editCustomButton = ttk.Button(startSolverFrame, text='Edit Custom', command=editCustom)
 editCustomButton.pack()
+
+showBoardButton = ttk.Button(startSolverFrame, text='Show Board', command=showBoard)
+showBoardButton.pack()
 
 # Button to start solver
 start_button = ttk.Button(startSolverFrame, text="Start Solver", command=onStart)
