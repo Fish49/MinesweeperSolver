@@ -478,7 +478,7 @@ def editCustom():
             
             mouse.position = (0, 0)
             time.sleep(0.2)
-            squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen))
+            squareImage = ImageGrab.grab((*TLPixelOnScreen, *BRPixelOnScreen), all_screens=True)
 
             for i in range(propertyProfiles['Custom']['squareSize']):
                 for j in range(propertyProfiles['Custom']['squareSize']):
