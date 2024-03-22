@@ -244,6 +244,7 @@ def editCustom():
             if event.event_type == 'up':
                 continue
             if event.name == 'esc':
+                calibrationLabel.config(text='')
                 return
             if event.name == 'enter':
                 break
@@ -272,6 +273,7 @@ def editCustom():
             if event.event_type == 'up':
                 continue
             if event.name == 'esc':
+                calibrationLabel.config(text='')
                 return
             if event.name == 'enter':
                 break
@@ -300,6 +302,7 @@ def editCustom():
             if event.event_type == 'up':
                 continue
             if event.name == 'esc':
+                calibrationLabel.config(text='')
                 return
             if event.name == 'enter':
                 break
@@ -327,6 +330,7 @@ def editCustom():
             if event.event_type == 'up':
                 continue
             if event.name == 'esc':
+                calibrationLabel.config(text='')
                 return
             if event.name == 'enter':
                 break
