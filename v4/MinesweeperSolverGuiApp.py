@@ -792,7 +792,9 @@ def viewProfile():
         closeShowBoardWindowButton.pack(padx=80)
 
     def showProfile():
-        pass
+        properties = propertyProfiles[difficulty_var.get()]
+        showProfileWindow = tk.Toplevel(profileViewerWindow)
+        showProfileWindow.title('View Profile')
 
     def closeProfileViewerWindow():
         profileViewerWindow.destroy()
