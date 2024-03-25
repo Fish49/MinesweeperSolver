@@ -802,6 +802,13 @@ def viewProfile():
         defatultOffsetLabel = ttk.Label(showProfileWindow)
         blueSpaceLabel = ttk.Label(showProfileWindow)
         minSimilarityLabel = ttk.Label(showProfileWindow)
+        originPointLabel.pack()
+        boardWidthLabel.pack()
+        boardHeightLabel.pack()
+        squareSizeLabel.pack()
+        defatultOffsetLabel.pack()
+        blueSpaceLabel.pack()
+        minSimilarityLabel.pack()
 
     def closeProfileViewerWindow():
         profileViewerWindow.destroy()
