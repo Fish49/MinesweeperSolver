@@ -793,20 +793,28 @@ def viewProfile():
 
     def showProfile():
         properties = propertyProfiles[difficulty_var.get()]
+
+        def closeShowProfileWindow():
+            showProfileWindow.destroy()
+            
         showProfileWindow = tk.Toplevel(profileViewerWindow)
         showProfileWindow.title('View Profile')
+
         originPointLabel = ttk.Label(showProfileWindow, text='Origin Point: '+str(tuple(properties['originPoint'])))
         boardSizeLabel = ttk.Label(showProfileWindow, text='Board Size: '+str(properties['boardWidth'])+'x'+str(properties['boardHeight']))
         squareSizeLabel = ttk.Label(showProfileWindow, text='Square Size: '+str(properties['squareSize']))
         defatultOffsetLabel = ttk.Label(showProfileWindow, text='Default Offset: '+str(tuple(properties['defaultOffset'])))
         blueSpaceLabel = ttk.Label(showProfileWindow, text='Blue Space Pixel: '+str(tuple(properties['blueSpace'])))
         minSimilarityLabel = ttk.Label(showProfileWindow, text='Minimum Similarity: '+str(properties['minSimilarity']))
+        closeShowProfileWindowButton = ttk.Button(showProfileWindow, text='Close', command=closeShowProfileWindow)
+
         originPointLabel.pack()
         boardSizeLabel.pack()
         squareSizeLabel.pack()
         defatultOffsetLabel.pack()
         blueSpaceLabel.pack()
         minSimilarityLabel.pack()
+        closeShowProfileWindowButton.pack(padx=80)
 
     def closeProfileViewerWindow():
         profileViewerWindow.destroy()
