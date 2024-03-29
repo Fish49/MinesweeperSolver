@@ -794,11 +794,21 @@ def viewProfile():
     def showProfile():
         properties = propertyProfiles[difficulty_var.get()]
 
+        def RGBToHex(RGB):
+            hexString = '#'
+            for i in RGB:
+                hexString = hexString+hex(i)
+            return hexString
+
         def closeShowProfileWindow():
             showProfileWindow.destroy()
             
         showProfileWindow = tk.Toplevel(profileViewerWindow)
         showProfileWindow.title('View Profile')
+
+        colorsFrame = tk.Frame(showProfileWindow)
+
+        oneLabel = ttk.Label(colorsFrame, text='One: '+RGBToHex(properties['cOne']))
 
         originPointLabel = ttk.Label(showProfileWindow, text='Origin Point: '+str(tuple(properties['originPoint'])))
         boardSizeLabel = ttk.Label(showProfileWindow, text='Board Size: '+str(properties['boardWidth'])+'x'+str(properties['boardHeight']))
