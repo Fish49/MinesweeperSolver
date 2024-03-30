@@ -809,6 +809,12 @@ def viewProfile():
         colorsFrame = tk.Frame(showProfileWindow)
 
         oneLabel = ttk.Label(colorsFrame, text='One: '+RGBToHex(properties['cOne']))
+        twoLabel = ttk.Label(colorsFrame, text='Two: '+RGBToHex(properties['cTwo']))
+        threeLabel = ttk.Label(colorsFrame, text='Three: '+RGBToHex(properties['cThree']))
+        fourLabel = ttk.Label(colorsFrame, text='Four: '+RGBToHex(properties['cFour']))
+        fiveLabel = ttk.Label(colorsFrame, text='Five: '+RGBToHex(properties['cFive']))
+        sixLabel = ttk.Label(colorsFrame, text='Six: '+RGBToHex(properties['cSix']))
+        sevenLabel = ttk.Label(colorsFrame, text='Seven: '+RGBToHex(properties['cSeven']))
 
         originPointLabel = ttk.Label(showProfileWindow, text='Origin Point: '+str(tuple(properties['originPoint'])))
         boardSizeLabel = ttk.Label(showProfileWindow, text='Board Size: '+str(properties['boardWidth'])+'x'+str(properties['boardHeight']))
