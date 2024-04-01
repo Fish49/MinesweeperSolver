@@ -794,11 +794,44 @@ def viewProfile():
     def showProfile():
         properties = propertyProfiles[difficulty_var.get()]
 
+        def RGBToHex(RGB):
+            hexString = '#'
+            for i in RGB:
+                hexVal = hex(i)[2:]
+                hexVal = hexVal.rjust(2, '0')
+                hexVal = hexVal.upper()
+                hexString = hexString+hexVal
+            return hexString
+
+        def isLight(color):
+            lightness = (color[0]*0.2126)+(color[1]*0.7152)+(color[2]*0.0722)
+            if lightness > 128:
+                return True
+            return False
+
         def closeShowProfileWindow():
             showProfileWindow.destroy()
             
         showProfileWindow = tk.Toplevel(profileViewerWindow)
         showProfileWindow.title('View Profile')
+
+        colorsFrame = tk.Frame(showProfileWindow)
+        oneLabel = ttk.Label(colorsFrame, text='One: '+RGBToHex(properties['cOne']), background=RGBToHex(properties['cOne']), foreground='black' if isLight(properties['cOne']) else 'white')
+        twoLabel = ttk.Label(colorsFrame, text='Two: '+RGBToHex(properties['cTwo']), background=RGBToHex(properties['cTwo']), foreground='black' if isLight(properties['cTwo']) else 'white')
+        threeLabel = ttk.Label(colorsFrame, text='Three: '+RGBToHex(properties['cThree']), background=RGBToHex(properties['cThree']), foreground='black' if isLight(properties['cThree']) else 'white')
+        fourLabel = ttk.Label(colorsFrame, text='Four: '+RGBToHex(properties['cFour']), background=RGBToHex(properties['cFour']), foreground='black' if isLight(properties['cFour']) else 'white')
+        fiveLabel = ttk.Label(colorsFrame, text='Five: '+RGBToHex(properties['cFive']), background=RGBToHex(properties['cFive']), foreground='black' if isLight(properties['cFive']) else 'white')
+        sixLabel = ttk.Label(colorsFrame, text='Six: '+RGBToHex(properties['cSix']), background=RGBToHex(properties['cSix']), foreground='black' if isLight(properties['cSix']) else 'white')
+        sevenLabel = ttk.Label(colorsFrame, text='Seven: '+RGBToHex(properties['cSeven']), background=RGBToHex(properties['cSeven']), foreground='black' if isLight(properties['cSeven']) else 'white')
+
+        oneLabel.pack()
+        twoLabel.pack()
+        threeLabel.pack()
+        fourLabel.pack()
+        fiveLabel.pack()
+        sixLabel.pack()
+        sevenLabel.pack()
+        colorsFrame.pack(pady=20)
 
         originPointLabel = ttk.Label(showProfileWindow, text='Origin Point: '+str(tuple(properties['originPoint'])))
         boardSizeLabel = ttk.Label(showProfileWindow, text='Board Size: '+str(properties['boardWidth'])+'x'+str(properties['boardHeight']))
