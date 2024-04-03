@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.6.4
+Minesweeper Solver v4.6.5
 Yet another python file.
 -PaiShoFish49
 2/29/24
