@@ -1,6 +1,6 @@
 #head
 '''
-Minesweeper Solver v4.6.4
+Minesweeper Solver v4.6.5
 Yet another python file.
 -PaiShoFish49
 2/29/24
@@ -752,7 +752,7 @@ def viewProfile():
                     BR = (TL[0]+properties['squareSize']-1, TL[1]+properties['squareSize']-1)
                     editedBoardImage.rectangle((*TL, *BR), outline=(255, 0, 0) if (i+j)%2==0 else (255, 255, 0))
 
-                    editedBoardImage.text((TL[0]+(properties['squareSize']//2), TL[1]+(properties['squareSize']//2)), str(getState((j, i), boardScreenshot)), (0, 0, 0))
+                    editedBoardImage.text((TL[0]+(properties['squareSize']//2), TL[1]+(properties['squareSize']//2)), str(getState((j, i), boardScreenshot)), (0, 0, 0), stroke_width=1, stroke_fill=(255, 255, 255))
 
                     editedBoardImage.point((j*properties['squareSize']+ajustedDefaultOffset[0], i*properties['squareSize']+ajustedDefaultOffset[1]), (0, 0, 0))
 
